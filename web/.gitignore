@@ -30,13 +30,23 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files — keep secrets out of git; commit `.env.example` only
+# env files — secrets stay in `.env` only (commit `.env.example` as a template)
 .env
 .env*.local
 .env.development
 .env.production
 .env.test
-.env.example
+
+# AI / editor agent config (local only)
+AGENTS.md
+CLAUDE.md
+.cursor/
+.cursorrules
+*.cursorrules
+
+# local sqlite artifacts (project uses MongoDB)
+*.db
+dev.db
 
 # vercel
 .vercel

@@ -1,36 +1,57 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# JOB HUNT
 
-## Getting Started
+A web-based job search workspace that centralizes discovery, document tailoring, and application tracking in one private account. Instead of automating submissions, it helps candidates aggregate listings, tailor materials per job, and track their pipeline—while keeping every real submission in their control.
 
-First, run the development server:
+**CSE 499 capstone project** — Brigham Young University Idaho (BYU-I)
+
+## Team
+
+- Andrew Omoniyi Mogbeyiromore
+- Hugo Leonardo Lopes Almeida
+- Angel David Arevalo Balcazar
+- Rommel Aunario
+
+## Features
+
+- **Multi-source job search** — Listings from public APIs and ATS boards (Remotive, Arbeitnow, Remote OK, Greenhouse, Lever, and more)
+- **Role-based filtering** — Match scoring against resume content and role interests
+- **Resume management** — Import PDF/Word or paste text; one base resume per profile
+- **Smart tailoring** — Job-specific resume and cover letter drafts (heuristic + optional OpenAI)
+- **Application tracker** — CRM-style pipeline with statuses and follow-up reminders
+- **Assisted apply workflow** — Manual or clipboard-assisted mode on employer sites
+- **Multi-profile workspace** — Separate resumes and application histories per profile
+- **Export** — Download application history as CSV
+
+## Tech stack
+
+| Layer | Technologies |
+|-------|--------------|
+| Frontend | Next.js 16, React 19, TypeScript, Tailwind CSS 4, SWR |
+| Backend | Next.js API Routes, NextAuth.js (Auth.js v5), Prisma |
+| Database | MongoDB Atlas |
+| Integrations | Job APIs/RSS, Greenhouse & Lever ATS, OpenAI (optional), pdf-parse, mammoth |
+
+## Getting started
+
+From the `web` directory:
 
 ```bash
+npm install
+npx prisma db push
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Environment variables
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Copy `.env.example` to `.env` and fill in your values:
 
-## Learn More
+- `DATABASE_URL` — MongoDB connection string
+- `AUTH_SECRET` — random secret for session encryption
+- `AUTH_URL` — app URL (e.g. `http://localhost:3000`)
 
-To learn more about Next.js, take a look at the following resources:
+Optional: `AUTH_GOOGLE_ID` / `AUTH_GOOGLE_SECRET`, `AUTH_GITHUB_ID` / `AUTH_GITHUB_SECRET`, `OPENAI_API_KEY`.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Deploy
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
