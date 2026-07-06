@@ -1,6 +1,6 @@
 # JOB HUNT
 
-A web-based job search workspace that centralizes discovery, document tailoring, and application tracking in one private account. Instead of automating submissions, it helps candidates aggregate listings, tailor materials per job, and track their pipeline—while keeping every real submission in their control.
+A web-based job search workspace that centralizes discovery, document tailoring, and application tracking in one private account. Instead of automating submissions, it helps candidates aggregate listings, tailor materials per job, and track their pipeline while keeping every real submission in their control.
 
 **CSE 499 capstone project** — Brigham Young University Idaho (BYU-I)
 
@@ -55,7 +55,3 @@ Copy `.env.example` to `.env` inside `web/` and fill in your values:
 - `AUTH_URL` — app URL (e.g. `http://localhost:3000`)
 
 Optional: `AUTH_GOOGLE_ID` / `AUTH_GOOGLE_SECRET`, `AUTH_GITHUB_ID` / `AUTH_GITHUB_SECRET`, `OPENAI_API_KEY`.
-
-## Deploy
-
-Deployed on [Vercel](https://vercel.com). Set the same environment variables in the project settings and set **Root Directory** to `web`.
