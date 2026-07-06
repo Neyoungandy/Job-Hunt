@@ -137,12 +137,12 @@ export default function HomePage() {
       </main>
 
       <footer className="border-t border-[var(--hairline)] px-6 py-8 text-center text-xs text-[var(--muted)]">
-        <p>
-          Created by{" "}
-          <span className="font-medium text-[var(--ink)]">
-            Andrew Mogbeyiromore
-          </span>{" "}
-          (Software Engineer from Brigham Young University)
+        <p className="font-medium text-[var(--ink)]">
+          CSE 499 Capstone Project · Brigham Young University Idaho
+        </p>
+        <p className="mt-2 leading-relaxed">
+          Andrew Omoniyi Mogbeyiromore · Hugo Leonardo Lopes Almeida · Angel
+          David Arevalo Balcazar · Rommel Aunario
         </p>
       </footer>
     </div>

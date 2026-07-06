@@ -91,20 +91,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <main className="flex-1 px-4 py-6 sm:px-8 sm:py-10">{children}</main>
         </div>
       </div>
-
-      <footer className="relative border-t border-[var(--hairline)] bg-[var(--panel-solid)]/90 px-4 py-6 text-center text-xs leading-relaxed text-[var(--muted)] backdrop-blur-md">
-        <p>
-          Created by{" "}
-          <span className="font-medium text-[var(--ink)]">
-            Andrew Mogbeyiromore
-          </span>{" "}
-          (Software Engineer from Brigham Young University)
-        </p>
-        <p className="mx-auto mt-2 max-w-3xl opacity-80">
-          Listings from Remotive, Arbeitnow, Remote OK, We Work Remotely, Jobicy,
-          Greenhouse, and Lever — follow each provider&apos;s terms.
-        </p>
-      </footer>
     </div>
   );
 }
