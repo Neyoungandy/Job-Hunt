@@ -56,3 +56,8 @@ Copy `.env.example` to `.env` inside `web/` and fill in your values:
 - `AUTH_URL` — app URL (e.g. `http://localhost:3000`)
 
 Optional: `AUTH_GOOGLE_ID` / `AUTH_GOOGLE_SECRET`, `AUTH_GITHUB_ID` / `AUTH_GITHUB_SECRET`, `OPENAI_API_KEY`.
+
+## Favorite Quotes
+
+Victor
+> "Success is where preparation and opportunity meet."
