@@ -12,6 +12,7 @@ The Next.js application lives in the [`web/`](web/) directory.
 - Hugo Leonardo Lopes Almeida
 - Angel David Arevalo Balcazar
 - Rommel Aunario
+- Victor Chavez
 
 ## Features
 
