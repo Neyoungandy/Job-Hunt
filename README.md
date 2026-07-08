@@ -60,6 +60,7 @@ Optional: `AUTH_GOOGLE_ID` / `AUTH_GOOGLE_SECRET`, `AUTH_GITHUB_ID` / `AUTH_GITH
 ## Favorite Quotes
 
 Victor
-> "Success is where preparation and opportunity meet."
+"Success is where preparation and opportunity meet."
+
 Andrew
-> "The Lord loves efforts because effort brings reward."
+"The Lord loves efforts because effort brings rewards."
