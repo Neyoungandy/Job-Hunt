@@ -66,5 +66,5 @@ Andrew
 "The Lord loves efforts because effort brings rewards."
 
 Rommel
-"By the street of 'By-and-By' one arrives at the house of Never."
-- President Thomas S. Monson, Decision Determine Destiny (BYU Devotional, Nov.6, 2005)
+"By the street of 'By-and-By' one arrives at the house of Never." - President Thomas S. Monson, Decision Determine Destiny (BYU Devotional, Nov.6, 2005)
+
