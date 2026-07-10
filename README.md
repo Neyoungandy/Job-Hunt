@@ -27,11 +27,11 @@ The Next.js application lives in the [`web/`](web/) directory.
 
 ## Tech stack
 
-| Layer | Technologies |
-|-------|--------------|
-| Frontend | Next.js 16, React 19, TypeScript, Tailwind CSS 4, SWR |
-| Backend | Next.js API Routes, NextAuth.js (Auth.js v5), Prisma |
-| Database | MongoDB Atlas |
+| Layer        | Technologies                                                                |
+| ------------ | --------------------------------------------------------------------------- |
+| Frontend     | Next.js 16, React 19, TypeScript, Tailwind CSS 4, SWR                       |
+| Backend      | Next.js API Routes, NextAuth.js (Auth.js v5), Prisma                        |
+| Database     | MongoDB Atlas                                                               |
 | Integrations | Job APIs/RSS, Greenhouse & Lever ATS, OpenAI (optional), pdf-parse, mammoth |
 
 ## Getting started
@@ -68,3 +68,5 @@ Andrew
 Rommel
 "By the street of 'By-and-By' one arrives at the house of Never." - President Thomas S. Monson, Decisions Determine Destiny (BYU Devotional, Nov.6, 2005)
 
+Hugo
+"I know I'm a fool, but even fools have principles!" (Oda, E., 2014, One Piece, Vol. 76, Chapter 759, Shueisha / Viz Media).
