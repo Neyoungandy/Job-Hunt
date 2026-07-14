@@ -41,11 +41,16 @@ From the `web` directory:
 ```bash
 cd web
 npm install
-npx prisma db push
+npm run db:generate
+npm run db:push
 npm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000).
+
+**Important:** Always use `npm run db:push` and `npm run db:generate` — do **not** run bare `npx prisma` (that can install Prisma 7, which this project does not use).
+
+If `db:push` times out, open MongoDB Atlas → **Network Access** → add **Allow Access from Anywhere** (`0.0.0.0/0`), wait 1–2 minutes, then retry.
 
 ### Environment variables
 

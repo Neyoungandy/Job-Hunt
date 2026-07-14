@@ -1,12 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { signOut, useSession } from "next-auth/react";
+import { useSession } from "@/context/AuthProvider";
 import { useApp } from "@/context/AppProvider";
 import { exportStateBlob, importStateFromJson } from "@/lib/storage";
 
 export function ProfileMenu() {
-  const { data: session } = useSession();
+  const { data: session, signOut } = useSession();
   const {
     hydrated,
     state,
@@ -57,7 +57,11 @@ export function ProfileMenu() {
           <button
             type="button"
             className="mt-2 w-full rounded-lg border border-[var(--hairline)] py-1.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--muted)] hover:text-[var(--ink)]"
-            onClick={() => void signOut({ callbackUrl: "/" })}
+            onClick={() => {
+              void signOut().then(() => {
+                window.location.href = "/";
+              });
+            }}
           >
             Sign out
           </button>
