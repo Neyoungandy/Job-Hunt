@@ -6,7 +6,7 @@ import {
   useContext,
   useMemo,
 } from "react";
-import { useSession } from "next-auth/react";
+import { useSession } from "@/context/AuthProvider";
 import useSWR from "swr";
 import { DEFAULT_ROLES, type RoleDefinition } from "@/lib/default-roles";
 import type {

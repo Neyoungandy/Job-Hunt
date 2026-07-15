@@ -1,4 +1,4 @@
-import { auth } from "@/auth";
+import { auth } from "@/lib/auth-server";
 import { AppShell } from "@/components/AppShell";
 import { redirect } from "next/navigation";
 

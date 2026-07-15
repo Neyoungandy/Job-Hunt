@@ -36,6 +36,10 @@ yarn-error.log*
 .env.development
 .env.production
 .env.test
+.env.example
+
+firebase-service-account.json
+*-firebase-adminsdk-*.json
 
 # AI / editor agent config (local only)
 AGENTS.md
