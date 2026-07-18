@@ -36,6 +36,8 @@ export type UserProfile = {
   name: string;
   headline: string;
   baseResume: string;
+  /** Small compressed profile image as a data URL. */
+  avatarDataUrl?: string;
   /** Last PDF imported (filename only; file is not stored). */
   resumePdfFileName?: string;
   createdAt: string;
