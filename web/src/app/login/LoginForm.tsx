@@ -8,6 +8,7 @@ import {
   signInWithEmailAndPassword,
   updateProfile,
 } from "firebase/auth";
+
 import { BrandMark } from "@/components/BrandMark";
 import { PasswordField } from "@/components/PasswordField";
 import { getFirebaseAuth } from "@/lib/firebase/client";
@@ -15,52 +16,82 @@ import { getFirebaseAuth } from "@/lib/firebase/client";
 type AuthMode = "signin" | "signup";
 
 async function establishSession(idToken: string) {
-  const res = await fetch("/api/auth/session", {
+  const response = await fetch("/api/auth/session", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+    },
     body: JSON.stringify({ idToken }),
   });
-  if (!res.ok) {
-    const data = (await res.json().catch(() => ({}))) as {
+
+  if (!response.ok) {
+    const data = (await response.json().catch(() => ({}))) as {
       error?: string;
       details?: string;
     };
+
     throw new Error(
       data.details
         ? `${data.error ?? "Session failed"}\n\n${data.details}`
         : (data.error ??
-            "Signed in with Firebase but could not start a server session. Check Firebase Admin keys in .env."),
+            "You signed in successfully, but the server session could not be created. Please try again."),
     );
   }
 }
 
-function friendlyAuthError(code: string): string {
+function friendlyAuthError(code: string, mode: AuthMode): string {
   switch (code) {
-    case "auth/configuration-not-found":
-    case "auth/operation-not-allowed":
-      return [
-        "Email/password sign-in is not enabled for this Firebase project.",
-        "",
-        "In Firebase Console → Authentication → Sign-in method:",
-        "1. Click Get started (if shown)",
-        "2. Enable Email/Password",
-        "3. Save, then try again",
-      ].join("\n");
-    case "auth/email-already-in-use":
-      return "An account with this email already exists. Try signing in.";
-    case "auth/invalid-email":
-      return "Enter a valid email address.";
-    case "auth/weak-password":
-      return "Password must be at least 6 characters.";
     case "auth/invalid-credential":
     case "auth/wrong-password":
     case "auth/user-not-found":
-      return "Wrong email or password.";
+      return "Incorrect email or password. Please check your credentials and try again.";
+
+    case "auth/invalid-email":
+      return "Please enter a valid email address.";
+
+    case "auth/email-already-in-use":
+      return "An account with this email already exists. Try signing in instead.";
+
+    case "auth/weak-password":
+      return "Your password must contain at least 6 characters.";
+
+    case "auth/missing-password":
+      return "Please enter your password.";
+
+    case "auth/missing-email":
+      return "Please enter your email address.";
+
+    case "auth/user-disabled":
+      return "This account has been disabled. Please contact support.";
+
     case "auth/too-many-requests":
-      return "Too many attempts. Wait a moment and try again.";
+      return "Too many unsuccessful attempts. Please wait a few minutes and try again.";
+
+    case "auth/network-request-failed":
+      return "Unable to connect. Please check your internet connection and try again.";
+
+    case "auth/configuration-not-found":
+    case "auth/operation-not-allowed":
+      return "Email and password authentication is currently unavailable. Please contact the administrator.";
+
     default:
-      return "Authentication failed. Check your details and try again.";
+      return mode === "signup"
+        ? "We could not create your account. Please check your information and try again."
+        : "We could not sign you in. Please check your information and try again.";
   }
+}
+
+function getErrorCode(error: unknown): string {
+  if (
+    error &&
+    typeof error === "object" &&
+    "code" in error &&
+    typeof error.code === "string"
+  ) {
+    return error.code;
+  }
+
+  return "";
 }
 
 export function LoginForm({
@@ -71,6 +102,7 @@ export function LoginForm({
   initialMode?: AuthMode;
 }) {
   const router = useRouter();
+
   const [mode, setMode] = useState<AuthMode>(initialMode);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -79,86 +111,116 @@ export function LoginForm({
   const [message, setMessage] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
-  function switchMode(next: AuthMode) {
-    setMode(next);
+  const isSignup = mode === "signup";
+
+  function clearMessage() {
+    if (message !== null) {
+      setMessage(null);
+    }
+  }
+
+  function switchMode(nextMode: AuthMode) {
+    setMode(nextMode);
     setMessage(null);
+    setPassword("");
     setConfirmPassword("");
   }
 
-  async function onEmailAuth(e: React.FormEvent) {
-    e.preventDefault();
+  async function onEmailAuth(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
     setMessage(null);
 
-    if (mode === "signup" && password !== confirmPassword) {
-      setMessage("Passwords do not match.");
+    const normalizedEmail = email.trim().toLowerCase();
+    const trimmedName = name.trim();
+
+    if (!normalizedEmail) {
+      setMessage("Please enter your email address.");
+      return;
+    }
+
+    if (!password) {
+      setMessage("Please enter your password.");
+      return;
+    }
+
+    if (isSignup && password.length < 6) {
+      setMessage("Your password must contain at least 6 characters.");
+      return;
+    }
+
+    if (isSignup && password !== confirmPassword) {
+      setMessage("Passwords do not match. Please enter them again.");
       return;
     }
 
     setBusy(true);
+
     try {
       const auth = getFirebaseAuth();
-      if (!auth) {
-        throw new Error("Firebase is not initialized. Check NEXT_PUBLIC_FIREBASE_* env vars.");
-      }
-      
-      const normalizedEmail = email.trim().toLowerCase();
 
       let idToken: string;
-      if (mode === "signup") {
-        console.log("[LoginForm] Creating user with email:", normalizedEmail);
-        const cred = await createUserWithEmailAndPassword(
+
+      if (isSignup) {
+        const credential = await createUserWithEmailAndPassword(
           auth,
           normalizedEmail,
           password,
         );
-        if (name.trim()) {
-          await updateProfile(cred.user, { displayName: name.trim() });
+
+        if (trimmedName) {
+          await updateProfile(credential.user, {
+            displayName: trimmedName,
+          });
         }
-        idToken = await cred.user.getIdToken(true);
-        console.log("[LoginForm] Got ID token (length:", idToken.length, ")");
+
+        idToken = await credential.user.getIdToken(true);
       } else {
-        console.log("[LoginForm] Signing in with email:", normalizedEmail);
-        const cred = await signInWithEmailAndPassword(
+        const credential = await signInWithEmailAndPassword(
           auth,
           normalizedEmail,
           password,
         );
-        idToken = await cred.user.getIdToken(true);
-        console.log("[LoginForm] Got ID token (length:", idToken.length, ")");
+
+        idToken = await credential.user.getIdToken(true);
       }
 
-      console.log("[LoginForm] Establishing session...");
       await establishSession(idToken);
-      console.log("[LoginForm] Session established, redirecting...");
+
       router.push(callbackUrl);
       router.refresh();
-    } catch (err) {
-      const code =
-        err && typeof err === "object" && "code" in err
-          ? String((err as { code: string }).code)
-          : "";
-      const message = code
-        ? friendlyAuthError(code)
-        : err instanceof Error
-          ? err.message
-          : "Something went wrong.";
-      console.error("[LoginForm] Error:", message, err);
-      setMessage(message);
+    } catch (error: unknown) {
+      const errorCode = getErrorCode(error);
+
+      if (errorCode) {
+        setMessage(friendlyAuthError(errorCode, mode));
+      } else if (error instanceof Error) {
+        /*
+         * Errors from establishSession() are already written in
+         * user-friendly language, so they may be displayed safely.
+         */
+        setMessage(error.message);
+      } else {
+        setMessage(
+          isSignup
+            ? "We could not create your account. Please try again."
+            : "We could not sign you in. Please try again.",
+        );
+      }
     } finally {
       setBusy(false);
     }
   }
 
-  const isSignup = mode === "signup";
-
   return (
-    <div className="flex min-h-full flex-col items-center justify-center mesh-bg px-4 py-16">
-      <div className="w-full max-w-md space-y-6 glass-panel animate-fade-up rounded-[var(--radius-lg)] p-8">
+    <div className="mesh-bg flex min-h-full flex-col items-center justify-center px-4 py-16">
+      <div className="glass-panel animate-fade-up w-full max-w-md space-y-6 rounded-[var(--radius-lg)] p-8">
         <div className="flex flex-col items-center text-center">
           <BrandMark className="mb-4 h-12 w-12" />
+
           <h1 className="font-display text-2xl font-bold tracking-tight">
             {isSignup ? "Create your account" : "Welcome back"}
           </h1>
+
           <p className="mt-2 text-sm text-[var(--muted)]">
             {isSignup
               ? "Set up your JOB HUNT workspace with email and password."
@@ -175,7 +237,8 @@ export function LoginForm({
             type="button"
             role="tab"
             aria-selected={!isSignup}
-            className={`flex-1 rounded-lg py-2.5 transition ${
+            disabled={busy}
+            className={`flex-1 rounded-lg py-2.5 transition disabled:cursor-not-allowed disabled:opacity-60 ${
               !isSignup
                 ? "bg-[var(--accent)] text-[var(--accent-ink)] shadow-sm"
                 : "text-[var(--muted)] hover:text-[var(--ink)]"
@@ -184,11 +247,13 @@ export function LoginForm({
           >
             Sign in
           </button>
+
           <button
             type="button"
             role="tab"
             aria-selected={isSignup}
-            className={`flex-1 rounded-lg py-2.5 transition ${
+            disabled={busy}
+            className={`flex-1 rounded-lg py-2.5 transition disabled:cursor-not-allowed disabled:opacity-60 ${
               isSignup
                 ? "bg-[var(--accent)] text-[var(--accent-ink)] shadow-sm"
                 : "text-[var(--muted)] hover:text-[var(--ink)]"
@@ -205,11 +270,7 @@ export function LoginForm({
           </div>
         )}
 
-        <form
-          key={mode}
-          className="space-y-4"
-          onSubmit={(e) => void onEmailAuth(e)}
-        >
+        <form key={mode} className="space-y-4" onSubmit={onEmailAuth}>
           {isSignup && (
             <div>
               <label
@@ -218,17 +279,23 @@ export function LoginForm({
               >
                 Full name
               </label>
+
               <input
                 id="auth-name"
                 type="text"
                 autoComplete="name"
                 className="input-field"
                 value={name}
-                onChange={(e) => setName(e.target.value)}
+                disabled={busy}
+                onChange={(event) => {
+                  setName(event.target.value);
+                  clearMessage();
+                }}
                 placeholder="Jane Doe"
               />
             </div>
           )}
+
           <div>
             <label
               htmlFor="auth-email"
@@ -236,22 +303,34 @@ export function LoginForm({
             >
               Email
             </label>
+
             <input
               id="auth-email"
               type="email"
               required
+              autoFocus
               autoComplete="email"
               className="input-field"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              disabled={busy}
+              aria-invalid={Boolean(message)}
+              aria-describedby={message ? "auth-error" : undefined}
+              onChange={(event) => {
+                setEmail(event.target.value);
+                clearMessage();
+              }}
               placeholder="you@example.com"
             />
           </div>
+
           <PasswordField
             id="auth-password"
             label="Password"
             value={password}
-            onChange={setPassword}
+            onChange={(value) => {
+              setPassword(value);
+              clearMessage();
+            }}
             placeholder={
               isSignup ? "At least 6 characters" : "Your password"
             }
@@ -264,12 +343,16 @@ export function LoginForm({
                 : "Tap the eye icon to check your password before signing in."
             }
           />
+
           {isSignup && (
             <PasswordField
               id="auth-confirm-password"
               label="Confirm password"
               value={confirmPassword}
-              onChange={setConfirmPassword}
+              onChange={(value) => {
+                setConfirmPassword(value);
+                clearMessage();
+              }}
               placeholder="Re-enter your password"
               autoComplete="new-password"
               required
@@ -277,18 +360,28 @@ export function LoginForm({
               matchWith={password}
             />
           )}
+
           {message && (
-            <p className="whitespace-pre-wrap rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-center text-sm text-red-300">
+            <div
+              id="auth-error"
+              role="alert"
+              aria-live="assertive"
+              className="whitespace-pre-wrap rounded-xl border border-red-500/40 bg-red-500/10 px-4 py-3 text-center text-sm leading-relaxed text-red-300"
+            >
               {message}
-            </p>
+            </div>
           )}
+
           <button
             type="submit"
             disabled={busy}
-            className="btn-primary w-full py-3 disabled:opacity-60"
+            aria-busy={busy}
+            className="btn-primary w-full py-3 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {busy
-              ? "Please wait…"
+              ? isSignup
+                ? "Creating account…"
+                : "Signing in…"
               : isSignup
                 ? "Create account & sign in"
                 : "Sign in with email"}
