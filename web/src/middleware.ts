@@ -20,6 +20,8 @@ export const config = {
     "/search/:path*",
     "/resume",
     "/resume/:path*",
+    "/profile",
+    "/profile/:path*",
     "/roles",
     "/roles/:path*",
     "/applications",

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useSession } from "@/context/AuthProvider";
 import { useApp } from "@/context/AppProvider";
 import { exportStateBlob, importStateFromJson } from "@/lib/storage";
@@ -48,12 +49,30 @@ export function ProfileMenu() {
     <div className="flex flex-col gap-2 lg:w-full">
       {session?.user && (
         <div className="rounded-lg border border-[var(--hairline)] bg-[var(--elevated)] px-2 py-2 text-xs text-[var(--muted)]">
-          <p className="truncate font-medium text-[var(--ink)]">
-            {session.user.name ?? session.user.email ?? "Signed in"}
-          </p>
-          {session.user.email && (
-            <p className="truncate text-[10px]">{session.user.email}</p>
-          )}
+          <div className="flex items-center gap-2">
+            {activeProfile?.avatarDataUrl || session.user.image ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={activeProfile?.avatarDataUrl ?? session.user.image ?? ""}
+                alt=""
+                className="h-8 w-8 shrink-0 rounded-lg object-cover"
+              />
+            ) : (
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[var(--accent-soft)] text-[10px] font-bold text-[var(--accent)]">
+                {(session.user.name ?? session.user.email ?? "U")
+                  .slice(0, 1)
+                  .toUpperCase()}
+              </div>
+            )}
+            <div className="min-w-0">
+              <p className="truncate font-medium text-[var(--ink)]">
+                {session.user.name ?? session.user.email ?? "Signed in"}
+              </p>
+              {session.user.email && (
+                <p className="truncate text-[10px]">{session.user.email}</p>
+              )}
+            </div>
+          </div>
           <button
             type="button"
             className="mt-2 w-full rounded-lg border border-[var(--hairline)] py-1.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--muted)] hover:text-[var(--ink)]"
@@ -65,6 +84,12 @@ export function ProfileMenu() {
           >
             Sign out
           </button>
+          <Link
+            href="/profile"
+            className="mt-2 block w-full rounded-lg border border-[var(--hairline)] py-1.5 text-center text-[10px] font-semibold uppercase tracking-wide text-[var(--muted)] hover:text-[var(--ink)]"
+          >
+            Manage profile
+          </Link>
         </div>
       )}
       <label className="text-[10px] font-semibold uppercase tracking-wider text-[var(--muted)]">

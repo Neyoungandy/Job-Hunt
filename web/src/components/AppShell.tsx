@@ -10,6 +10,7 @@ const nav = [
   { href: "/dashboard", label: "Overview", icon: "◆" },
   { href: "/search", label: "Job search", icon: "◎" },
   { href: "/resume", label: "Resume", icon: "▤" },
+  { href: "/profile", label: "Profile", icon: "ID" },
   { href: "/roles", label: "Role interests", icon: "◇" },
   { href: "/applications", label: "Job tracker", icon: "▣" },
   { href: "/settings", label: "Apply settings", icon: "⚙" },

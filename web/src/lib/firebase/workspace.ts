@@ -7,6 +7,7 @@ type ProfileDoc = {
   name: string;
   headline: string;
   baseResume: string;
+  avatarDataUrl: string | null;
   resumePdfFileName: string | null;
   customRolesJson: string;
   disabledBuiltInJson: string;
@@ -88,6 +89,7 @@ function mapProfile(
     name: p.name,
     headline: p.headline,
     baseResume: p.baseResume,
+    avatarDataUrl: p.avatarDataUrl ?? undefined,
     resumePdfFileName: p.resumePdfFileName ?? undefined,
     createdAt: p.createdAt,
     customRoles,
@@ -162,6 +164,7 @@ export async function ensureWorkspace(userId: string) {
       name: "My profile",
       headline: "",
       baseResume: "",
+      avatarDataUrl: null,
       resumePdfFileName: null,
       customRolesJson: "[]",
       disabledBuiltInJson: "[]",
@@ -208,7 +211,7 @@ type PostBody =
       patch: Partial<
         Pick<
           UserProfile,
-          "name" | "headline" | "baseResume" | "resumePdfFileName"
+          "name" | "headline" | "baseResume" | "resumePdfFileName" | "avatarDataUrl"
         >
       >;
     }
@@ -280,6 +283,7 @@ export async function mutateWorkspace(
         name: body.name.trim() || "New profile",
         headline: "",
         baseResume: "",
+        avatarDataUrl: null,
         resumePdfFileName: null,
         customRolesJson: "[]",
         disabledBuiltInJson: "[]",
@@ -295,6 +299,9 @@ export async function mutateWorkspace(
       if (body.patch.name !== undefined) d.name = body.patch.name;
       if (body.patch.headline !== undefined) d.headline = body.patch.headline;
       if (body.patch.baseResume !== undefined) d.baseResume = body.patch.baseResume;
+      if (body.patch.avatarDataUrl !== undefined) {
+        d.avatarDataUrl = body.patch.avatarDataUrl || null;
+      }
       if (body.patch.resumePdfFileName !== undefined) {
         d.resumePdfFileName = body.patch.resumePdfFileName ?? null;
       }
@@ -465,6 +472,7 @@ export async function mutateWorkspace(
           name: p.name,
           headline: p.headline ?? "",
           baseResume: p.baseResume ?? "",
+          avatarDataUrl: p.avatarDataUrl ?? null,
           resumePdfFileName: p.resumePdfFileName ?? null,
           customRolesJson: JSON.stringify(cr),
           disabledBuiltInJson: JSON.stringify(dis),

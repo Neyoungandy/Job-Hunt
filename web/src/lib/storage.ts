@@ -30,6 +30,7 @@ export function importStateFromJson(text: string): AppPersistedState {
     name: p.name,
     headline: p.headline ?? "",
     baseResume: p.baseResume ?? "",
+    avatarDataUrl: p.avatarDataUrl,
     resumePdfFileName: p.resumePdfFileName,
     createdAt: p.createdAt ?? new Date().toISOString(),
     customRoles: p.customRoles,

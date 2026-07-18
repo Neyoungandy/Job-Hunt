@@ -33,7 +33,7 @@ type PostBody =
       patch: Partial<
         Pick<
           UserProfile,
-          "name" | "headline" | "baseResume" | "resumePdfFileName"
+          "name" | "headline" | "baseResume" | "resumePdfFileName" | "avatarDataUrl"
         >
       >;
     }

@@ -137,6 +137,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       headline: p.headline,
       baseResume: p.baseResume,
       resumePdfFileName: p.resumePdfFileName,
+      avatarDataUrl: p.avatarDataUrl,
       createdAt: p.createdAt,
       customRoles: p.customRoles,
       disabledBuiltInRoleIds: p.disabledBuiltInRoleIds,
@@ -174,9 +175,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           headline: p.headline,
           baseResume: p.baseResume,
           resumePdfFileName: p.resumePdfFileName,
+          avatarDataUrl: p.avatarDataUrl,
         }).filter(([, v]) => v !== undefined),
       ) as Partial<
-        Pick<UserProfile, "name" | "headline" | "baseResume" | "resumePdfFileName">
+        Pick<
+          UserProfile,
+          "name" | "headline" | "baseResume" | "resumePdfFileName" | "avatarDataUrl"
+        >
       >;
       if (Object.keys(patch).length === 0) return Promise.resolve();
       return run({
