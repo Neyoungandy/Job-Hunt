@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { useApp } from "@/context/AppProvider";
 import { copyApplicationPackage, openApplyUrl } from "@/lib/apply-package";
 import { applicationsToCsv, downloadCsv } from "@/lib/export-csv";
@@ -37,6 +37,8 @@ export default function ApplicationsPage() {
   const [statusFilter, setStatusFilter] = useState<ApplicationStatus | "all">(
     "all",
   );
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(8);
 
   const rows = useMemo(() => {
     const pid = activeProfile?.id;
@@ -49,6 +51,17 @@ export default function ApplicationsPage() {
     if (statusFilter === "all") return rows;
     return rows.filter((a) => a.status === statusFilter);
   }, [rows, statusFilter]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [filtered, pageSize]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+
+  const paginated = useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return filtered.slice(start, start + pageSize);
+  }, [filtered, page, pageSize]);
 
   const stats = useMemo(() => {
     const m = new Map<ApplicationStatus | "all", number>();
@@ -150,8 +163,9 @@ export default function ApplicationsPage() {
             : "No applications in this status filter."}
         </p>
       ) : (
-        <ul className="space-y-4">
-          {filtered.map((a) => {
+        <>
+          <ul className="space-y-4">
+            {paginated.map((a) => {
             const followKind = followUpById.get(a.id);
             return (
             <li
@@ -323,8 +337,106 @@ export default function ApplicationsPage() {
               </div>
             </li>
           );
-          })}
-        </ul>
+            })}
+          </ul>
+
+          {filtered.length > pageSize && (
+            <div className="mt-4 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="text-sm text-[var(--muted)]">
+                  Showing {(filtered.length === 0 ? 0 : (page - 1) * pageSize + 1)}
+                  -{Math.min(page * pageSize, filtered.length)} of {filtered.length}
+                </div>
+                <label className="flex items-center gap-2 text-sm text-[var(--muted)]">
+                  <span>Items per page</span>
+                  <select
+                    className="rounded-xl border border-[var(--hairline)] bg-[var(--elevated)] px-3 py-1 text-sm"
+                    value={pageSize}
+                    onChange={(e) => setPageSize(Number(e.target.value))}
+                  >
+                    <option value={4}>4</option>
+                    <option value={8}>8</option>
+                    <option value={12}>12</option>
+                    <option value={20}>20</option>
+                  </select>
+                </label>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  className="rounded-xl border px-3 py-2 text-sm"
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  disabled={page === 1}
+                >
+                  Prev
+                </button>
+
+                <div className="flex items-center gap-1">
+                  {(() => {
+                    const windowSize = 5;
+                    const half = Math.floor(windowSize / 2);
+                    let start = Math.max(1, Math.min(page - half, totalPages - (windowSize - 1)));
+                    let end = Math.min(totalPages, start + windowSize - 1);
+                    const pages: number[] = [];
+                    for (let p = start; p <= end; p++) pages.push(p);
+                    return (
+                      <>
+                        {start > 1 && (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => setPage(1)}
+                              className="rounded-xl border px-3 py-2 text-sm border-[var(--hairline)]"
+                            >
+                              1
+                            </button>
+                            {start > 2 && <span className="px-2 text-sm text-[var(--muted)]">…</span>}
+                          </>
+                        )}
+                        {pages.map((p) => (
+                          <button
+                            key={p}
+                            type="button"
+                            onClick={() => setPage(p)}
+                            className={`rounded-xl border px-3 py-2 text-sm ${
+                              p === page
+                                ? "border-[var(--accent)]/50 bg-[var(--accent-soft)]"
+                                : "border-[var(--hairline)]"
+                            }`}
+                          >
+                            {p}
+                          </button>
+                        ))}
+                        {end < totalPages && (
+                          <>
+                            {end < totalPages - 1 && <span className="px-2 text-sm text-[var(--muted)]">…</span>}
+                            <button
+                              type="button"
+                              onClick={() => setPage(totalPages)}
+                              className="rounded-xl border px-3 py-2 text-sm border-[var(--hairline)]"
+                            >
+                              {totalPages}
+                            </button>
+                          </>
+                        )}
+                      </>
+                    );
+                  })()}
+                </div>
+
+                <button
+                  type="button"
+                  className="rounded-xl border px-3 py-2 text-sm"
+                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={page === totalPages}
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+          )}
+        </>
       )}
     </div>
   );
