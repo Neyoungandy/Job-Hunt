@@ -27,6 +27,8 @@ export default function SearchPage() {
   const [query, setQuery] = useState("");
   const [detail, setDetail] = useState<RemoteJobListing | null>(null);
   const [seenBefore, setSeenBefore] = useState<Set<string>>(new Set());
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(8);
 
   const profileId = activeProfile?.id ?? "";
 
@@ -111,6 +113,17 @@ export default function SearchPage() {
     state.applications,
     profileId,
   ]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [filtered, pageSize]);
+
+  const totalPages = Math.max(1, Math.ceil(scoredJobs.length / pageSize));
+
+  const paginated = useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return scoredJobs.slice(start, start + pageSize);
+  }, [scoredJobs, page, pageSize]);
 
   const newCount = useMemo(
     () => scoredJobs.filter((x) => x.isNew).length,
@@ -207,7 +220,7 @@ export default function SearchPage() {
             <span className="ml-2 opacity-70">· Sorted by match %</span>
           </p>
           <ul className="space-y-3">
-            {scoredJobs.map(({ job, match, isNew, duplicate }) => (
+            {paginated.map(({ job, match, isNew, duplicate }) => (
               <li
                 key={job.id}
                 className="card-interactive p-4"
@@ -269,6 +282,103 @@ export default function SearchPage() {
               </li>
             ))}
           </ul>
+
+          {scoredJobs.length > pageSize && (
+            <div className="mt-4 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="text-sm text-[var(--muted)]">
+                  Showing {(scoredJobs.length === 0 ? 0 : (page - 1) * pageSize + 1)}
+                  -{Math.min(page * pageSize, scoredJobs.length)} of {scoredJobs.length}
+                </div>
+                <label className="flex items-center gap-2 text-sm text-[var(--muted)]">
+                  <span>Items per page</span>
+                  <select
+                    className="rounded-xl border border-[var(--hairline)] bg-[var(--elevated)] px-3 py-1 text-sm"
+                    value={pageSize}
+                    onChange={(e) => setPageSize(Number(e.target.value))}
+                  >
+                    <option value={4}>4</option>
+                    <option value={8}>8</option>
+                    <option value={12}>12</option>
+                    <option value={20}>20</option>
+                  </select>
+                </label>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  className="rounded-xl border px-3 py-2 text-sm"
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  disabled={page === 1}
+                >
+                  Prev
+                </button>
+
+                <div className="flex items-center gap-1">
+                  {(() => {
+                    const windowSize = 5;
+                    const half = Math.floor(windowSize / 2);
+                    let start = Math.max(1, Math.min(page - half, totalPages - (windowSize - 1)));
+                    let end = Math.min(totalPages, start + windowSize - 1);
+                    const pages: number[] = [];
+                    for (let p = start; p <= end; p++) pages.push(p);
+                    return (
+                      <>
+                        {start > 1 && (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => setPage(1)}
+                              className="rounded-xl border px-3 py-2 text-sm border-[var(--hairline)]"
+                            >
+                              1
+                            </button>
+                            {start > 2 && <span className="px-2 text-sm text-[var(--muted)]">…</span>}
+                          </>
+                        )}
+                        {pages.map((p) => (
+                          <button
+                            key={p}
+                            type="button"
+                            onClick={() => setPage(p)}
+                            className={`rounded-xl border px-3 py-2 text-sm ${
+                              p === page
+                                ? "border-[var(--accent)]/50 bg-[var(--accent-soft)]"
+                                : "border-[var(--hairline)]"
+                            }`}
+                          >
+                            {p}
+                          </button>
+                        ))}
+                        {end < totalPages && (
+                          <>
+                            {end < totalPages - 1 && <span className="px-2 text-sm text-[var(--muted)]">…</span>}
+                            <button
+                              type="button"
+                              onClick={() => setPage(totalPages)}
+                              className="rounded-xl border px-3 py-2 text-sm border-[var(--hairline)]"
+                            >
+                              {totalPages}
+                            </button>
+                          </>
+                        )}
+                      </>
+                    );
+                  })()}
+                </div>
+
+                <button
+                  type="button"
+                  className="rounded-xl border px-3 py-2 text-sm"
+                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={page === totalPages}
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+          )}
         </section>
       </div>
 
