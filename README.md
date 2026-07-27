@@ -10,9 +10,8 @@ The Next.js application lives in the [`web/`](web/) directory.
 
 - Andrew Omoniyi Mogbeyiromore
 - Hugo Leonardo Lopes Almeida
-- Angel David Arevalo Balcazar
 - Rommel Aunario
-- Victor Chavez
+
 
 ## Features
 
@@ -27,11 +26,11 @@ The Next.js application lives in the [`web/`](web/) directory.
 
 ## Tech stack
 
-| Layer        | Technologies                                                                |
-| ------------ | --------------------------------------------------------------------------- |
-| Frontend     | Next.js 16, React 19, TypeScript, Tailwind CSS 4, SWR                       |
-| Backend      | Next.js API Routes, NextAuth.js (Auth.js v5), Prisma                        |
-| Database     | MongoDB Atlas                                                               |
+| Layer | Technologies |
+|-------|--------------|
+| Frontend | Next.js 16, React 19, TypeScript, Tailwind CSS 4, SWR |
+| Backend | Next.js API Routes, NextAuth.js (Auth.js v5), Prisma |
+| Database | MongoDB Atlas |
 | Integrations | Job APIs/RSS, Greenhouse & Lever ATS, OpenAI (optional), pdf-parse, mammoth |
 
 ## Getting started
@@ -41,16 +40,11 @@ From the `web` directory:
 ```bash
 cd web
 npm install
-npm run db:generate
-npm run db:push
+npx prisma db push
 npm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000).
-
-**Important:** Always use `npm run db:push` and `npm run db:generate` — do **not** run bare `npx prisma` (that can install Prisma 7, which this project does not use).
-
-If `db:push` times out, open MongoDB Atlas → **Network Access** → add **Allow Access from Anywhere** (`0.0.0.0/0`), wait 1–2 minutes, then retry.
 
 ### Environment variables
 
@@ -69,9 +63,3 @@ Victor
 
 Andrew
 "The Lord loves efforts because effort brings rewards."
-
-Rommel
-"By the street of 'By-and-By' one arrives at the house of Never." - President Thomas S. Monson, Decisions Determine Destiny (BYU Devotional, Nov.6, 2005)
-
-Hugo
-"I know I'm a fool, but even fools have principles!" (Oda, E., 2014, One Piece, Vol. 76, Chapter 759, Shueisha / Viz Media).

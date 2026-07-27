@@ -33,8 +33,8 @@ const tiles = [
   },
   {
     href: "/settings",
-    title: "Apply settings",
-    desc: "Manual vs assisted clipboard workflow when you save from search.",
+    title: "Settings",
+    desc: "Security, password, and apply workflow preferences.",
     icon: "⚙",
     tint: "from-rose-500/10 to-transparent",
     wide: true,

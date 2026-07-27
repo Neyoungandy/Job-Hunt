@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useSession } from "@/context/AuthProvider";
 import { useApp } from "@/context/AppProvider";
 import { exportStateBlob, importStateFromJson } from "@/lib/storage";
@@ -119,6 +120,12 @@ export default function ProfilePage() {
           >
             Sign out
           </button>
+          <Link
+            href="/settings/security"
+            className="btn-primary mt-3 block w-full py-2.5 text-center text-sm"
+          >
+            Change password
+          </Link>
         </div>
 
         <CurrentProfileForm

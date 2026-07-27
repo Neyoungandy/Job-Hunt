@@ -90,6 +90,12 @@ export function ProfileMenu() {
           >
             Manage profile
           </Link>
+          <Link
+            href="/settings/security"
+            className="mt-2 block w-full rounded-lg border border-[var(--accent)]/30 bg-[var(--accent-soft)] py-1.5 text-center text-[10px] font-semibold uppercase tracking-wide text-[var(--accent)] hover:text-[var(--ink)]"
+          >
+            Change password
+          </Link>
         </div>
       )}
       <label className="text-[10px] font-semibold uppercase tracking-wider text-[var(--muted)]">

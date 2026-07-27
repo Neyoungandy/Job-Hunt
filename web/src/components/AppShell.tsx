@@ -13,7 +13,7 @@ const nav = [
   { href: "/profile", label: "Profile", icon: "ID" },
   { href: "/roles", label: "Role interests", icon: "◇" },
   { href: "/applications", label: "Job tracker", icon: "▣" },
-  { href: "/settings", label: "Apply settings", icon: "⚙" },
+  { href: "/settings", label: "Settings", icon: "⚙" },
 ];
 
 export function AppShell({ children }: { children: React.ReactNode }) {
