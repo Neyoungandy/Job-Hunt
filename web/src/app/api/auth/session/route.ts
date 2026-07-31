@@ -35,9 +35,15 @@ export async function POST(request: Request) {
     const errMsg = err instanceof Error ? err.message : String(err);
     console.error("[POST /api/auth/session]", errMsg);
     console.error("[POST /api/auth/session] Full error:", err);
+    const missingAdmin =
+      errMsg.includes("Missing Firebase Admin credentials") ||
+      errMsg.includes("FIREBASE_ADMIN");
+
     return NextResponse.json(
       {
-        error: "Could not create session. Check Firebase Admin credentials in .env.",
+        error: missingAdmin
+          ? "Server session setup is incomplete. Firebase Admin credentials must be configured on the host (e.g. Vercel environment variables)."
+          : "Could not create session. Please try signing in again.",
         details: process.env.NODE_ENV === "development" ? errMsg : undefined,
       },
       { status: 401 },

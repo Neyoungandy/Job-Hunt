@@ -37,7 +37,6 @@ dev-server.*.log
 .env.development
 .env.production
 .env.test
-.env.example
 
 firebase-service-account.json
 *-firebase-adminsdk-*.json
