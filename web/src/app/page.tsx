@@ -35,7 +35,7 @@ const features = [
   },
   {
     title: "Private workspace",
-    body: "Sign in with email, Google, or GitHub — isolated data per account.",
+    body: "Sign in with email — isolated data per account.",
     accent: "from-rose-500/10 to-pink-500/5",
     icon: "◆",
   },
