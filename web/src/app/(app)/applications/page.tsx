@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useApp } from "@/context/AppProvider";
 import { copyApplicationPackage, openApplyUrl } from "@/lib/apply-package";
 import { applicationsToCsv, downloadCsv } from "@/lib/export-csv";
@@ -16,78 +16,193 @@ const statuses: { id: ApplicationStatus; label: string }[] = [
   { id: "closed", label: "Closed" },
 ];
 
-function dateInputValue(iso: string | null | undefined): string {
-  if (!iso) return "";
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return "";
-  return d.toISOString().slice(0, 10);
+type ApplicationTextareaProps = {
+  value: string;
+  onSave: (value: string) => void;
+  className: string;
+  rows: number;
+  placeholder?: string;
+};
+
+function ApplicationTextarea({
+  value,
+  onSave,
+  className,
+  rows,
+  placeholder,
+}: ApplicationTextareaProps) {
+  const [draft, setDraft] = useState(value);
+
+  useEffect(() => {
+    setDraft(value);
+  }, [value]);
+
+  function saveDraft() {
+    if (draft !== value) {
+      onSave(draft);
+    }
+  }
+
+  return (
+    <textarea
+      className={className}
+      rows={rows}
+      value={draft}
+      placeholder={placeholder}
+      onChange={(event) => setDraft(event.target.value)}
+      onBlur={saveDraft}
+    />
+  );
 }
 
-function isoFromDateInput(s: string): string | null {
-  const t = s.trim();
-  if (!t) return null;
-  const d = new Date(`${t}T12:00:00.000Z`);
-  if (Number.isNaN(d.getTime())) return null;
-  return d.toISOString();
+function dateInputValue(iso: string | null | undefined): string {
+  if (!iso) return "";
+
+  const date = new Date(iso);
+
+  if (Number.isNaN(date.getTime())) {
+    return "";
+  }
+
+  return date.toISOString().slice(0, 10);
+}
+
+function isoFromDateInput(value: string): string | null {
+  const trimmedValue = value.trim();
+
+  if (!trimmedValue) {
+    return null;
+  }
+
+  const date = new Date(`${trimmedValue}T12:00:00.000Z`);
+
+  if (Number.isNaN(date.getTime())) {
+    return null;
+  }
+
+  return date.toISOString();
 }
 
 export default function ApplicationsPage() {
-  const { hydrated, activeProfile, state, updateApplication, removeApplication } =
-    useApp();
-  const [statusFilter, setStatusFilter] = useState<ApplicationStatus | "all">(
-    "all",
-  );
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(8);
+  const {
+    hydrated,
+    activeProfile,
+    state,
+    updateApplication,
+    removeApplication,
+  } = useApp();
 
-  const rows = useMemo(() => {
-    const pid = activeProfile?.id;
+  const [selectedApplicationId, setSelectedApplicationId] = useState<
+    string | null
+  >(null);
+
+  const [draggedApplicationId, setDraggedApplicationId] = useState<
+    string | null
+  >(null);
+
+  const [dragOverStatus, setDragOverStatus] =
+    useState<ApplicationStatus | null>(null);
+
+  const applications = useMemo(() => {
+    const profileId = activeProfile?.id;
+
     return state.applications.filter(
-      (a) => !a.profileId || a.profileId === pid,
+      (application) =>
+        !application.profileId || application.profileId === profileId,
     );
   }, [state.applications, activeProfile?.id]);
 
-  const filtered = useMemo(() => {
-    if (statusFilter === "all") return rows;
-    return rows.filter((a) => a.status === statusFilter);
-  }, [rows, statusFilter]);
-
-  useEffect(() => {
-    setPage(1);
-  }, [filtered, pageSize]);
-
-  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
-
-  const paginated = useMemo(() => {
-    const start = (page - 1) * pageSize;
-    return filtered.slice(start, start + pageSize);
-  }, [filtered, page, pageSize]);
-
-  const stats = useMemo(() => {
-    const m = new Map<ApplicationStatus | "all", number>();
-    m.set("all", rows.length);
-    for (const s of statuses) m.set(s.id, 0);
-    for (const a of rows) {
-      m.set(a.status, (m.get(a.status) ?? 0) + 1);
+  const selectedApplication = useMemo(() => {
+    if (!selectedApplicationId) {
+      return null;
     }
-    return m;
-  }, [rows]);
+
+    return (
+      applications.find(
+        (application) => application.id === selectedApplicationId,
+      ) ?? null
+    );
+  }, [applications, selectedApplicationId]);
 
   const followUpById = useMemo(() => {
-    const map = new Map<string, "overdue" | "today" | "upcoming">();
-    for (const r of getFollowUpReminders(rows, activeProfile?.id)) {
-      map.set(r.application.id, r.kind);
+    const reminders = new Map<
+      string,
+      "overdue" | "today" | "upcoming"
+    >();
+
+    for (const reminder of getFollowUpReminders(
+      applications,
+      activeProfile?.id,
+    )) {
+      reminders.set(reminder.application.id, reminder.kind);
     }
-    return map;
-  }, [rows, activeProfile?.id]);
+
+    return reminders;
+  }, [applications, activeProfile?.id]);
+
+  useEffect(() => {
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setSelectedApplicationId(null);
+      }
+    }
+
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (selectedApplicationId && !selectedApplication) {
+      setSelectedApplicationId(null);
+    }
+  }, [selectedApplication, selectedApplicationId]);
 
   function exportCsv() {
-    const csv = applicationsToCsv(rows);
-    const safeName = (activeProfile?.name ?? "profile")
+    const csv = applicationsToCsv(applications);
+
+    const safeProfileName = (activeProfile?.name ?? "profile")
       .replace(/[^a-z0-9]+/gi, "-")
       .toLowerCase();
-    const date = new Date().toISOString().slice(0, 10);
-    downloadCsv(`job-hunt-tracker-${safeName}-${date}.csv`, csv);
+
+    const currentDate = new Date().toISOString().slice(0, 10);
+
+    downloadCsv(
+      `job-hunt-tracker-${safeProfileName}-${currentDate}.csv`,
+      csv,
+    );
+  }
+
+  function moveApplicationToStatus(
+    applicationId: string,
+    newStatus: ApplicationStatus,
+  ) {
+    const application = applications.find(
+      (item) => item.id === applicationId,
+    );
+
+    if (!application || application.status === newStatus) {
+      return;
+    }
+
+    const patch: Partial<SavedApplication> = {
+      status: newStatus,
+    };
+
+    if (newStatus === "applied" && !application.appliedAt) {
+      patch.appliedAt = new Date().toISOString();
+    }
+
+    updateApplication(applicationId, patch);
+  }
+
+  function updateStatus(
+    application: SavedApplication,
+    status: ApplicationStatus,
+  ) {
+    moveApplicationToStatus(application.id, status);
   }
 
   if (!hydrated) {
@@ -95,218 +210,404 @@ export default function ApplicationsPage() {
   }
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h1 className="font-display text-2xl font-semibold tracking-tight">
-            Job tracker — {activeProfile?.name ?? "Profile"}
-          </h1>
-          <p className="mt-2 text-sm text-[var(--muted)]">
-            Pipeline, follow-up dates, and documents per employer. Filter by
-            status; set &quot;Applied&quot; date when you actually submit.
+    <>
+      <div className="mx-auto w-full max-w-[1600px] space-y-6">
+        <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <h1 className="font-display text-2xl font-semibold tracking-tight">
+              Job tracker — {activeProfile?.name ?? "Profile"}
+            </h1>
+
+            <p className="mt-2 text-sm text-[var(--muted)]">
+              Drag an application card to another column to update its status.
+              Click a card to view and edit its complete details.
+            </p>
+          </div>
+
+          {applications.length > 0 && (
+            <button
+              type="button"
+              onClick={exportCsv}
+              className="btn-secondary shrink-0 px-4 py-2 text-sm"
+            >
+              Export CSV
+            </button>
+          )}
+        </header>
+
+        {applications.length === 0 ? (
+          <p className="rounded-2xl border border-[var(--hairline)] bg-[var(--panel)] p-8 text-center text-sm text-[var(--muted)]">
+            Nothing saved yet. Use Job search → Tailor &amp; save on a
+            listing.
           </p>
-        </div>
-        {rows.length > 0 && (
-          <button
-            type="button"
-            onClick={exportCsv}
-            className="btn-secondary shrink-0 px-4 py-2 text-sm"
-          >
-            Export CSV
-          </button>
+        ) : (
+          <div className="overflow-x-auto pb-4">
+            <div className="grid min-w-[1320px] grid-cols-6 gap-4">
+              {statuses.map((status) => {
+                const columnApplications = applications.filter(
+                  (application) => application.status === status.id,
+                );
+
+                const isDragTarget = dragOverStatus === status.id;
+
+                return (
+                  <section
+                    key={status.id}
+                    onDragEnter={(event) => {
+                      event.preventDefault();
+                      setDragOverStatus(status.id);
+                    }}
+                    onDragOver={(event) => {
+                      event.preventDefault();
+                      event.dataTransfer.dropEffect = "move";
+                      setDragOverStatus(status.id);
+                    }}
+                    onDragLeave={(event) => {
+                      const nextTarget = event.relatedTarget;
+
+                      if (
+                        nextTarget instanceof Node &&
+                        event.currentTarget.contains(nextTarget)
+                      ) {
+                        return;
+                      }
+
+                      setDragOverStatus((currentStatus) =>
+                        currentStatus === status.id ? null : currentStatus,
+                      );
+                    }}
+                    onDrop={(event) => {
+                      event.preventDefault();
+
+                      const applicationId =
+                        event.dataTransfer.getData("text/plain") ||
+                        draggedApplicationId;
+
+                      if (applicationId) {
+                        moveApplicationToStatus(applicationId, status.id);
+                      }
+
+                      setDraggedApplicationId(null);
+                      setDragOverStatus(null);
+                    }}
+                    className={`min-h-[460px] rounded-2xl border bg-[var(--panel)] p-3 transition-all ${
+                      isDragTarget
+                        ? "border-[var(--accent)] bg-[var(--accent-soft)]/20 ring-2 ring-[var(--accent)]/20"
+                        : "border-[var(--hairline)]"
+                    }`}
+                  >
+                    <header className="mb-3 flex items-center justify-between gap-2">
+                      <h2 className="font-display text-sm font-semibold">
+                        {status.label}
+                      </h2>
+
+                      <span className="rounded-full bg-[var(--elevated)] px-2 py-1 text-xs text-[var(--muted)]">
+                        {columnApplications.length}
+                      </span>
+                    </header>
+
+                    <div className="space-y-3">
+                      {columnApplications.length === 0 ? (
+                        <div
+                          className={`rounded-xl border border-dashed p-4 text-center text-xs transition ${
+                            isDragTarget
+                              ? "border-[var(--accent)] text-[var(--accent)]"
+                              : "border-[var(--hairline)] text-[var(--muted)]"
+                          }`}
+                        >
+                          {isDragTarget
+                            ? `Drop in ${status.label}`
+                            : "No applications"}
+                        </div>
+                      ) : (
+                        columnApplications.map((application) => {
+                          const followUpKind = followUpById.get(
+                            application.id,
+                          );
+
+                          const isDragging =
+                            draggedApplicationId === application.id;
+
+                          return (
+                            <article
+                              key={application.id}
+                              draggable
+                              role="button"
+                              tabIndex={0}
+                              aria-label={`${application.title} at ${application.company}`}
+                              onDragStart={(event) => {
+                                setDraggedApplicationId(application.id);
+
+                                event.dataTransfer.effectAllowed = "move";
+                                event.dataTransfer.setData(
+                                  "text/plain",
+                                  application.id,
+                                );
+                              }}
+                              onDragEnd={() => {
+                                setDraggedApplicationId(null);
+                                setDragOverStatus(null);
+                              }}
+                              onClick={() =>
+                                setSelectedApplicationId(application.id)
+                              }
+                              onKeyDown={(event) => {
+                                if (
+                                  event.key === "Enter" ||
+                                  event.key === " "
+                                ) {
+                                  event.preventDefault();
+                                  setSelectedApplicationId(application.id);
+                                }
+                              }}
+                              className={`block w-full cursor-grab rounded-xl border bg-[var(--elevated)] p-3 text-left transition active:cursor-grabbing hover:-translate-y-0.5 hover:border-[var(--accent)]/60 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/40 ${
+                                isDragging
+                                  ? "scale-[0.98] opacity-45"
+                                  : "opacity-100"
+                              } ${
+                                followUpKind === "overdue"
+                                  ? "border-red-500/40"
+                                  : followUpKind === "today"
+                                    ? "border-amber-500/40"
+                                    : "border-[var(--hairline)]"
+                              }`}
+                            >
+                              <div className="flex items-start justify-between gap-2">
+                                <h3 className="text-sm font-semibold leading-snug">
+                                  {application.title}
+                                </h3>
+
+                                <span
+                                  className="shrink-0 select-none text-xs text-[var(--muted)]"
+                                  aria-hidden="true"
+                                  title="Drag application"
+                                >
+                                  ⋮⋮
+                                </span>
+                              </div>
+
+                              <p className="mt-1 text-xs text-[var(--muted)]">
+                                {application.company}
+                              </p>
+
+                              <p className="mt-2 text-[10px] text-[var(--muted)]">
+                                Saved{" "}
+                                {new Date(
+                                  application.savedAt,
+                                ).toLocaleDateString()}
+                              </p>
+
+                              {followUpKind === "overdue" && (
+                                <span className="mt-2 inline-block rounded-full bg-red-500/20 px-2 py-1 text-[10px] font-semibold text-red-300">
+                                  Follow-up overdue
+                                </span>
+                              )}
+
+                              {followUpKind === "today" && (
+                                <span className="mt-2 inline-block rounded-full bg-amber-500/20 px-2 py-1 text-[10px] font-semibold text-amber-200">
+                                  Follow-up today
+                                </span>
+                              )}
+
+                              {followUpKind === "upcoming" && (
+                                <span className="mt-2 inline-block rounded-full bg-[var(--accent-soft)] px-2 py-1 text-[10px] font-semibold text-[var(--accent)]">
+                                  Follow-up soon
+                                </span>
+                              )}
+                            </article>
+                          );
+                        })
+                      )}
+                    </div>
+                  </section>
+                );
+              })}
+            </div>
+          </div>
         )}
       </div>
 
-      {rows.length > 0 && (
-        <section className="space-y-3 rounded-2xl border border-[var(--hairline)] bg-[var(--panel)] p-4">
-          <h2 className="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
-            Summary
-          </h2>
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-7">
-            <button
-              type="button"
-              onClick={() => setStatusFilter("all")}
-              className={`rounded-xl border px-2 py-2 text-left text-xs ${
-                statusFilter === "all"
-                  ? "border-[var(--accent)]/50 bg-[var(--accent-soft)]"
-                  : "border-[var(--hairline)]"
-              }`}
-            >
-              <div className="text-[var(--muted)]">All</div>
-              <div className="font-display text-lg font-semibold">{stats.get("all")}</div>
-            </button>
-            {statuses.map((s) => (
-              <button
-                key={s.id}
-                type="button"
-                onClick={() => setStatusFilter(s.id)}
-                className={`rounded-xl border px-2 py-2 text-left text-xs ${
-                  statusFilter === s.id
-                    ? "border-[var(--accent)]/50 bg-[var(--accent-soft)]"
-                    : "border-[var(--hairline)]"
-                }`}
-              >
-                <div className="text-[var(--muted)]">{s.label}</div>
-                <div className="font-display text-lg font-semibold">
-                  {stats.get(s.id) ?? 0}
-                </div>
-              </button>
-            ))}
-          </div>
-        </section>
-      )}
+      {selectedApplication && (
+        <div
+          className="fixed inset-0 z-50 bg-black/55"
+          role="presentation"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) {
+              setSelectedApplicationId(null);
+            }
+          }}
+        >
+          <aside
+            role="dialog"
+            aria-modal="true"
+            aria-label={`${selectedApplication.title} application details`}
+            className="absolute right-0 top-0 h-full w-full max-w-2xl overflow-y-auto border-l border-[var(--hairline)] bg-[var(--panel)] shadow-2xl"
+          >
+            <div className="sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-[var(--hairline)] bg-[var(--panel)]/95 p-5 backdrop-blur">
+              <div className="min-w-0">
+                <h2 className="font-display text-xl font-semibold leading-snug">
+                  {selectedApplication.title}
+                </h2>
 
-      {filtered.length === 0 ? (
-        <p className="rounded-2xl border border-[var(--hairline)] bg-[var(--panel)] p-8 text-center text-sm text-[var(--muted)]">
-          {rows.length === 0
-            ? "Nothing saved yet. Use Job search → Tailor & save on a listing."
-            : "No applications in this status filter."}
-        </p>
-      ) : (
-        <>
-          <ul className="space-y-4">
-            {paginated.map((a) => {
-            const followKind = followUpById.get(a.id);
-            return (
-            <li
-              key={a.id}
-              className={`rounded-2xl border bg-[var(--panel)] p-4 ${
-                followKind === "overdue"
-                  ? "border-red-500/35 ring-1 ring-red-500/15"
-                  : followKind === "today"
-                    ? "border-amber-500/35 ring-1 ring-amber-500/15"
-                    : "border-[var(--hairline)]"
-              }`}
-            >
-              <div className="flex flex-col gap-3 sm:flex-row sm:justify-between">
-                <div className="min-w-0">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <h2 className="font-display text-lg font-semibold leading-snug">
-                      {a.title}
-                    </h2>
-                    {followKind === "overdue" && (
-                      <span className="rounded-full bg-red-500/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-red-300">
-                        Follow-up overdue
-                      </span>
-                    )}
-                    {followKind === "today" && (
-                      <span className="rounded-full bg-amber-500/25 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-amber-200">
-                        Follow-up today
-                      </span>
-                    )}
-                    {followKind === "upcoming" && (
-                      <span className="rounded-full bg-[var(--accent-soft)] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--accent)]">
-                        Follow-up soon
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-sm text-[var(--muted)]">
-                    {a.company} · {a.source}
-                  </p>
-                  <p className="mt-1 text-xs text-[var(--muted)]">
-                    Saved {new Date(a.savedAt).toLocaleString()}
-                  </p>
-                </div>
-                <div className="flex shrink-0 flex-col gap-2 sm:items-end">
-                  <select
-                    className="rounded-xl border border-[var(--hairline)] bg-[var(--elevated)] px-3 py-2 text-sm"
-                    value={a.status}
-                    onChange={(e) => {
-                      const st = e.target.value as ApplicationStatus;
-                      const patch: Partial<SavedApplication> = { status: st };
-                      if (st === "applied" && !a.appliedAt) {
-                        patch.appliedAt = new Date().toISOString();
-                      }
-                      updateApplication(a.id, patch);
-                    }}
-                  >
-                    {statuses.map((s) => (
-                      <option key={s.id} value={s.id}>
-                        {s.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                <p className="mt-1 text-sm text-[var(--muted)]">
+                  {selectedApplication.company} · {selectedApplication.source}
+                </p>
+
+                <p className="mt-1 text-xs text-[var(--muted)]">
+                  Saved{" "}
+                  {new Date(
+                    selectedApplication.savedAt,
+                  ).toLocaleString()}
+                </p>
               </div>
-              <div className="mt-3 grid gap-3 sm:grid-cols-2">
+
+              <button
+                type="button"
+                onClick={() => setSelectedApplicationId(null)}
+                className="shrink-0 rounded-xl border border-[var(--hairline)] px-3 py-2 text-sm text-[var(--muted)] transition hover:text-[var(--ink)]"
+                aria-label="Close application details"
+              >
+                Close
+              </button>
+            </div>
+
+            <div className="space-y-5 p-5">
+              <div>
+                <label
+                  htmlFor="application-status"
+                  className="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]"
+                >
+                  Status
+                </label>
+
+                <select
+                  id="application-status"
+                  className="mt-1 w-full rounded-xl border border-[var(--hairline)] bg-[var(--elevated)] px-3 py-2 text-sm"
+                  value={selectedApplication.status}
+                  onChange={(event) =>
+                    updateStatus(
+                      selectedApplication,
+                      event.target.value as ApplicationStatus,
+                    )
+                  }
+                >
+                  {statuses.map((status) => (
+                    <option key={status.id} value={status.id}>
+                      {status.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
                 <div>
-                  <label className="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
+                  <label
+                    htmlFor="application-applied-date"
+                    className="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]"
+                  >
                     Applied on
                   </label>
+
                   <input
+                    id="application-applied-date"
                     type="date"
                     className="mt-1 w-full rounded-xl border border-[var(--hairline)] bg-[var(--elevated)] px-3 py-2 text-sm"
-                    value={dateInputValue(a.appliedAt)}
-                    onChange={(e) =>
-                      updateApplication(a.id, {
-                        appliedAt: isoFromDateInput(e.target.value),
+                    value={dateInputValue(selectedApplication.appliedAt)}
+                    onChange={(event) =>
+                      updateApplication(selectedApplication.id, {
+                        appliedAt: isoFromDateInput(event.target.value),
                       })
                     }
                   />
                 </div>
+
                 <div>
-                  <label className="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
+                  <label
+                    htmlFor="application-follow-up-date"
+                    className="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]"
+                  >
                     Follow-up reminder
                   </label>
+
                   <input
+                    id="application-follow-up-date"
                     type="date"
                     className="mt-1 w-full rounded-xl border border-[var(--hairline)] bg-[var(--elevated)] px-3 py-2 text-sm"
-                    value={dateInputValue(a.nextFollowUp)}
-                    onChange={(e) =>
-                      updateApplication(a.id, {
-                        nextFollowUp: isoFromDateInput(e.target.value),
+                    value={dateInputValue(
+                      selectedApplication.nextFollowUp,
+                    )}
+                    onChange={(event) =>
+                      updateApplication(selectedApplication.id, {
+                        nextFollowUp: isoFromDateInput(event.target.value),
                       })
                     }
                   />
                 </div>
               </div>
-              <label className="mt-3 block text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
-                Notes
-              </label>
-              <textarea
-                className="mt-1 w-full rounded-xl border border-[var(--hairline)] bg-[var(--elevated)] p-3 text-sm"
-                rows={2}
-                value={a.notes}
-                onChange={(e) =>
-                  updateApplication(a.id, { notes: e.target.value })
-                }
-                placeholder="Recruiter name, referral, thank-you sent…"
-              />
-              <label className="mt-3 block text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
-                Tailored resume draft
-              </label>
-              <textarea
-                className="mt-1 max-h-48 w-full rounded-xl border border-[var(--hairline)] bg-[var(--elevated)] p-3 font-mono text-xs leading-relaxed"
-                value={a.tailoredResume}
-                onChange={(e) =>
-                  updateApplication(a.id, { tailoredResume: e.target.value })
-                }
-                rows={6}
-              />
-              <label className="mt-3 block text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
-                Cover letter
-              </label>
-              <textarea
-                className="mt-1 max-h-40 w-full rounded-xl border border-[var(--hairline)] bg-[var(--elevated)] p-3 text-sm leading-relaxed"
-                value={a.coverLetter ?? ""}
-                onChange={(e) =>
-                  updateApplication(a.id, { coverLetter: e.target.value })
-                }
-                rows={5}
-                placeholder="Cover letter draft for this employer…"
-              />
-              <div className="mt-3 flex flex-wrap items-center justify-end gap-2">
+
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
+                  Notes
+                </label>
+
+                <ApplicationTextarea
+                  className="mt-1 w-full rounded-xl border border-[var(--hairline)] bg-[var(--elevated)] p-3 text-sm"
+                  rows={4}
+                  value={selectedApplication.notes ?? ""}
+                  placeholder="Recruiter name, referral, thank-you sent…"
+                  onSave={(notes) =>
+                    updateApplication(selectedApplication.id, { notes })
+                  }
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
+                  Tailored resume draft
+                </label>
+
+                <ApplicationTextarea
+                  className="mt-1 min-h-52 w-full rounded-xl border border-[var(--hairline)] bg-[var(--elevated)] p-3 font-mono text-xs leading-relaxed"
+                  rows={12}
+                  value={selectedApplication.tailoredResume ?? ""}
+                  onSave={(tailoredResume) =>
+                    updateApplication(selectedApplication.id, {
+                      tailoredResume,
+                    })
+                  }
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
+                  Cover letter
+                </label>
+
+                <ApplicationTextarea
+                  className="mt-1 min-h-44 w-full rounded-xl border border-[var(--hairline)] bg-[var(--elevated)] p-3 text-sm leading-relaxed"
+                  rows={10}
+                  value={selectedApplication.coverLetter ?? ""}
+                  placeholder="Cover letter draft for this employer…"
+                  onSave={(coverLetter) =>
+                    updateApplication(selectedApplication.id, {
+                      coverLetter,
+                    })
+                  }
+                />
+              </div>
+
+              <div className="flex flex-wrap items-center justify-end gap-2 border-t border-[var(--hairline)] pt-5">
                 <button
                   type="button"
-                  className="rounded-xl border border-[var(--hairline)] px-3 py-2 text-sm text-[var(--muted)] hover:text-[var(--ink)]"
+                  className="rounded-xl border border-[var(--hairline)] px-3 py-2 text-sm text-[var(--muted)] transition hover:text-[var(--ink)]"
                   onClick={() =>
                     void copyApplicationPackage(
-                      a.title,
-                      a.company,
-                      a.tailoredResume,
-                      a.coverLetter ?? "",
-                    ).then((ok) => {
-                      if (!ok) {
+                      selectedApplication.title,
+                      selectedApplication.company,
+                      selectedApplication.tailoredResume,
+                      selectedApplication.coverLetter ?? "",
+                    ).then((copied) => {
+                      if (!copied) {
                         alert(
                           "Clipboard unavailable. Select text manually or try HTTPS/localhost.",
                         );
@@ -316,128 +617,34 @@ export default function ApplicationsPage() {
                 >
                   Copy resume + letter
                 </button>
+
                 <button
                   type="button"
-                  className="rounded-xl border border-[var(--hairline)] px-3 py-2 text-sm text-[var(--muted)] hover:text-[var(--ink)]"
-                  onClick={() => openApplyUrl(a.url)}
+                  className="rounded-xl border border-[var(--hairline)] px-3 py-2 text-sm text-[var(--muted)] transition hover:text-[var(--ink)]"
+                  onClick={() => openApplyUrl(selectedApplication.url)}
                 >
                   Open apply link
                 </button>
+
                 <button
                   type="button"
-                  className="text-xs text-red-300 hover:underline"
+                  className="rounded-xl border border-red-500/30 px-3 py-2 text-sm text-red-300 transition hover:bg-red-500/10"
                   onClick={() => {
                     if (confirm("Remove this saved application?")) {
-                      removeApplication(a.id);
+                      const applicationId = selectedApplication.id;
+
+                      setSelectedApplicationId(null);
+                      removeApplication(applicationId);
                     }
                   }}
                 >
                   Remove
                 </button>
               </div>
-            </li>
-          );
-            })}
-          </ul>
-
-          {filtered.length > pageSize && (
-            <div className="mt-4 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="text-sm text-[var(--muted)]">
-                  Showing {(filtered.length === 0 ? 0 : (page - 1) * pageSize + 1)}
-                  -{Math.min(page * pageSize, filtered.length)} of {filtered.length}
-                </div>
-                <label className="flex items-center gap-2 text-sm text-[var(--muted)]">
-                  <span>Items per page</span>
-                  <select
-                    className="rounded-xl border border-[var(--hairline)] bg-[var(--elevated)] px-3 py-1 text-sm"
-                    value={pageSize}
-                    onChange={(e) => setPageSize(Number(e.target.value))}
-                  >
-                    <option value={4}>4</option>
-                    <option value={8}>8</option>
-                    <option value={12}>12</option>
-                    <option value={20}>20</option>
-                  </select>
-                </label>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  className="rounded-xl border px-3 py-2 text-sm"
-                  onClick={() => setPage((p) => Math.max(1, p - 1))}
-                  disabled={page === 1}
-                >
-                  Prev
-                </button>
-
-                <div className="flex items-center gap-1">
-                  {(() => {
-                    const windowSize = 5;
-                    const half = Math.floor(windowSize / 2);
-                    let start = Math.max(1, Math.min(page - half, totalPages - (windowSize - 1)));
-                    let end = Math.min(totalPages, start + windowSize - 1);
-                    const pages: number[] = [];
-                    for (let p = start; p <= end; p++) pages.push(p);
-                    return (
-                      <>
-                        {start > 1 && (
-                          <>
-                            <button
-                              type="button"
-                              onClick={() => setPage(1)}
-                              className="rounded-xl border px-3 py-2 text-sm border-[var(--hairline)]"
-                            >
-                              1
-                            </button>
-                            {start > 2 && <span className="px-2 text-sm text-[var(--muted)]">…</span>}
-                          </>
-                        )}
-                        {pages.map((p) => (
-                          <button
-                            key={p}
-                            type="button"
-                            onClick={() => setPage(p)}
-                            className={`rounded-xl border px-3 py-2 text-sm ${
-                              p === page
-                                ? "border-[var(--accent)]/50 bg-[var(--accent-soft)]"
-                                : "border-[var(--hairline)]"
-                            }`}
-                          >
-                            {p}
-                          </button>
-                        ))}
-                        {end < totalPages && (
-                          <>
-                            {end < totalPages - 1 && <span className="px-2 text-sm text-[var(--muted)]">…</span>}
-                            <button
-                              type="button"
-                              onClick={() => setPage(totalPages)}
-                              className="rounded-xl border px-3 py-2 text-sm border-[var(--hairline)]"
-                            >
-                              {totalPages}
-                            </button>
-                          </>
-                        )}
-                      </>
-                    );
-                  })()}
-                </div>
-
-                <button
-                  type="button"
-                  className="rounded-xl border px-3 py-2 text-sm"
-                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                  disabled={page === totalPages}
-                >
-                  Next
-                </button>
-              </div>
             </div>
-          )}
-        </>
+          </aside>
+        </div>
       )}
-    </div>
+    </>
   );
 }
