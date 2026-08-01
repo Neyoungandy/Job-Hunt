@@ -23,6 +23,7 @@ export default function ProfilePage() {
   const [newProfileName, setNewProfileName] = useState("");
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<Message>(null);
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
 
   const canRemove = state.profiles.length > 1 && !!activeProfile;
 
@@ -87,12 +88,19 @@ export default function ProfilePage() {
           <h2 className="section-label">Account</h2>
           <div className="mt-4 flex items-center gap-3">
             {accountImage ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={accountImage}
-                alt=""
-                className="h-12 w-12 rounded-xl object-cover"
-              />
+              <button
+                type="button"
+                className="overflow-hidden rounded-xl"
+                onClick={() => setPreviewImage(accountImage)}
+                aria-label="Open profile photo"
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={accountImage}
+                  alt="Profile photo"
+                  className="h-12 w-12 object-cover"
+                />
+              </button>
             ) : (
               <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-sm font-bold text-[var(--accent)]">
                 {(session?.user?.name ?? session?.user?.email ?? "U")
@@ -136,6 +144,7 @@ export default function ProfilePage() {
           onSelect={setActiveProfileId}
           onRemove={removeProfile}
           onMessage={setMessage}
+          onOpenPreview={setPreviewImage}
         />
       </section>
 
@@ -235,6 +244,32 @@ export default function ProfilePage() {
           {message.text}
         </p>
       )}
+
+      {previewImage && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
+          onClick={() => setPreviewImage(null)}
+        >
+          <div
+            className="relative max-h-[90vh] max-w-[90vw]"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <button
+              type="button"
+              className="absolute right-3 top-3 rounded-full border border-white/20 bg-black/70 px-3 py-1 text-sm text-white transition hover:bg-black/90"
+              onClick={() => setPreviewImage(null)}
+              aria-label="Close preview"
+            >
+              ×
+            </button>
+            <img
+              src={previewImage}
+              alt="Profile photo preview"
+              className="max-h-[90vh] max-w-[90vw] rounded-3xl object-contain shadow-2xl"
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -246,6 +281,7 @@ function CurrentProfileForm({
   onSelect,
   onRemove,
   onMessage,
+  onOpenPreview,
 }: {
   profiles: UserProfile[];
   activeProfile: UserProfile | null;
@@ -253,6 +289,7 @@ function CurrentProfileForm({
   onSelect: (id: string) => void;
   onRemove: (id: string) => void;
   onMessage: (message: Message) => void;
+  onOpenPreview: (src: string) => void;
 }) {
   const { upsertProfile } = useApp();
   const [profileName, setProfileName] = useState(activeProfile?.name ?? "");
@@ -322,12 +359,19 @@ function CurrentProfileForm({
           </label>
           <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-[var(--hairline)] bg-white/[0.03] p-3">
             {avatarDataUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={avatarDataUrl}
-                alt=""
-                className="h-16 w-16 rounded-2xl object-cover"
-              />
+              <button
+                type="button"
+                className="overflow-hidden rounded-2xl"
+                onClick={() => onOpenPreview(avatarDataUrl)}
+                aria-label="Open profile photo"
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={avatarDataUrl}
+                  alt="Profile photo"
+                  className="h-16 w-16 object-cover"
+                />
+              </button>
             ) : (
               <ProfileAvatar
                 profile={{
