@@ -57,14 +57,14 @@ Optional: `AUTH_GOOGLE_ID` / `AUTH_GOOGLE_SECRET`, `AUTH_GITHUB_ID` / `AUTH_GITH
 
 ## Favorite Quotes
 
-Victor
+Victor  
 "Success is where preparation and opportunity meet."
 
-Andrew
+Andrew  
 "The Lord loves efforts because effort brings rewards."
 
-Hugo
-"Be yourself; everyone else is already taken." Oscar Wilde
+Hugo  
+"Be yourself; everyone else is already taken." - Oscar Wilde
 
 Rommel  
 "By the street of 'by-and-by,' one arrives at the house of 'never.'" - Miguel de Cervantes
