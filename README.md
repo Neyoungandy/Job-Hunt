@@ -12,7 +12,6 @@ The Next.js application lives in the [`web/`](web/) directory.
 - Hugo Leonardo Lopes Almeida
 - Rommel Aunario
 
-
 ## Features
 
 - **Multi-source job search** — Listings from public APIs and ATS boards (Remotive, Arbeitnow, Remote OK, Greenhouse, Lever, and more)
@@ -26,11 +25,11 @@ The Next.js application lives in the [`web/`](web/) directory.
 
 ## Tech stack
 
-| Layer | Technologies |
-|-------|--------------|
-| Frontend | Next.js 16, React 19, TypeScript, Tailwind CSS 4, SWR |
-| Backend | Next.js API Routes, NextAuth.js (Auth.js v5), Prisma |
-| Database | MongoDB Atlas |
+| Layer        | Technologies                                                                |
+| ------------ | --------------------------------------------------------------------------- |
+| Frontend     | Next.js 16, React 19, TypeScript, Tailwind CSS 4, SWR                       |
+| Backend      | Next.js API Routes, NextAuth.js (Auth.js v5), Prisma                        |
+| Database     | MongoDB Atlas                                                               |
 | Integrations | Job APIs/RSS, Greenhouse & Lever ATS, OpenAI (optional), pdf-parse, mammoth |
 
 ## Getting started
@@ -63,3 +62,6 @@ Victor
 
 Andrew
 "The Lord loves efforts because effort brings rewards."
+
+Hugo
+"Be yourself; everyone else is already taken." Oscar Wilde
