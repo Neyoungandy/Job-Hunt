@@ -103,6 +103,8 @@ export default function ApplicationsPage() {
   const [dragOverStatus, setDragOverStatus] =
     useState<ApplicationStatus | null>(null);
 
+  const [searchQuery, setSearchQuery] = useState("");
+
   const applications = useMemo(() => {
     const profileId = activeProfile?.id;
 
@@ -111,6 +113,29 @@ export default function ApplicationsPage() {
         !application.profileId || application.profileId === profileId,
     );
   }, [state.applications, activeProfile?.id]);
+
+  const searchedApplications = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+
+    if (!query) {
+      return applications;
+    }
+
+    return applications.filter((application) => {
+      const searchableText = [
+        application.title,
+        application.company,
+        application.notes,
+        application.tailoredResume,
+        application.coverLetter,
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+
+      return searchableText.includes(query);
+    });
+  }, [applications, searchQuery]);
 
   const selectedApplication = useMemo(() => {
     if (!selectedApplicationId) {
@@ -235,18 +260,88 @@ export default function ApplicationsPage() {
           )}
         </header>
 
+        {applications.length > 0 && (
+          <section className="flex flex-col gap-3 rounded-2xl border border-[var(--hairline)] bg-[var(--panel)] p-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="w-full max-w-md">
+              <label
+                htmlFor="application-search"
+                className="mb-1 block text-xs font-semibold uppercase tracking-wider text-[var(--muted)]"
+              >
+                Search applications
+              </label>
+
+              <input
+                id="application-search"
+                type="search"
+                value={searchQuery}
+                onChange={(event) => setSearchQuery(event.target.value)}
+                placeholder="Search job title, company, notes..."
+                className="w-full rounded-xl border border-[var(--hairline)] bg-[var(--elevated)] px-4 py-2 text-sm"
+              />
+            </div>
+
+            {searchQuery.trim() && (
+              <div className="flex shrink-0 items-center gap-3 text-sm text-[var(--muted)]">
+                <span>
+                  Showing {searchedApplications.length} of{" "}
+                  {applications.length}
+                </span>
+
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery("")}
+                  className="rounded-lg px-2 py-1 text-[var(--accent)] hover:bg-[var(--accent-soft)]"
+                >
+                  Clear search
+                </button>
+              </div>
+            )}
+          </section>
+        )}
+
         {applications.length === 0 ? (
           <p className="rounded-2xl border border-[var(--hairline)] bg-[var(--panel)] p-8 text-center text-sm text-[var(--muted)]">
             Nothing saved yet. Use Job search → Tailor &amp; save on a
             listing.
           </p>
+        ) : searchedApplications.length === 0 ? (
+          <div className="rounded-2xl border border-[var(--hairline)] bg-[var(--panel)] p-8 text-center">
+            <p className="text-sm font-medium">
+              No applications match &quot;{searchQuery}&quot;.
+            </p>
+
+            <p className="mt-1 text-sm text-[var(--muted)]">
+              Try another search term or clear the search.
+            </p>
+
+            <button
+              type="button"
+              onClick={() => setSearchQuery("")}
+              className="mt-4 rounded-xl border border-[var(--hairline)] px-4 py-2 text-sm text-[var(--accent)] hover:bg-[var(--accent-soft)]"
+            >
+              Clear search
+            </button>
+          </div>
         ) : (
-          <div className="pb-4">
-            <div className="grid min-w-full grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
+          <div className="overflow-x-auto pb-4">
+            <div
+              className={`grid gap-4 ${
+                searchQuery.trim()
+                  ? "min-w-[440px] grid-cols-[repeat(auto-fit,minmax(210px,1fr))]"
+                  : "min-w-[1320px] grid-cols-6"
+              }`}
+            >
               {statuses.map((status) => {
-                const columnApplications = applications.filter(
+                const columnApplications = searchedApplications.filter(
                   (application) => application.status === status.id,
                 );
+
+                if (
+                  searchQuery.trim() &&
+                  columnApplications.length === 0
+                ) {
+                  return null;
+                }
 
                 const isDragTarget = dragOverStatus === status.id;
 
@@ -284,7 +379,10 @@ export default function ApplicationsPage() {
                         draggedApplicationId;
 
                       if (applicationId) {
-                        moveApplicationToStatus(applicationId, status.id);
+                        moveApplicationToStatus(
+                          applicationId,
+                          status.id,
+                        );
                       }
 
                       setDraggedApplicationId(null);
@@ -357,7 +455,9 @@ export default function ApplicationsPage() {
                                   event.key === " "
                                 ) {
                                   event.preventDefault();
-                                  setSelectedApplicationId(application.id);
+                                  setSelectedApplicationId(
+                                    application.id,
+                                  );
                                 }
                               }}
                               className={`block w-full cursor-grab rounded-xl border bg-[var(--elevated)] p-3 text-left transition active:cursor-grabbing hover:-translate-y-0.5 hover:border-[var(--accent)]/60 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/40 ${
@@ -450,7 +550,8 @@ export default function ApplicationsPage() {
                 </h2>
 
                 <p className="mt-1 text-sm text-[var(--muted)]">
-                  {selectedApplication.company} · {selectedApplication.source}
+                  {selectedApplication.company} ·{" "}
+                  {selectedApplication.source}
                 </p>
 
                 <p className="mt-1 text-xs text-[var(--muted)]">
@@ -512,10 +613,14 @@ export default function ApplicationsPage() {
                     id="application-applied-date"
                     type="date"
                     className="mt-1 w-full rounded-xl border border-[var(--hairline)] bg-[var(--elevated)] px-3 py-2 text-sm"
-                    value={dateInputValue(selectedApplication.appliedAt)}
+                    value={dateInputValue(
+                      selectedApplication.appliedAt,
+                    )}
                     onChange={(event) =>
                       updateApplication(selectedApplication.id, {
-                        appliedAt: isoFromDateInput(event.target.value),
+                        appliedAt: isoFromDateInput(
+                          event.target.value,
+                        ),
                       })
                     }
                   />
@@ -538,7 +643,9 @@ export default function ApplicationsPage() {
                     )}
                     onChange={(event) =>
                       updateApplication(selectedApplication.id, {
-                        nextFollowUp: isoFromDateInput(event.target.value),
+                        nextFollowUp: isoFromDateInput(
+                          event.target.value,
+                        ),
                       })
                     }
                   />
@@ -556,7 +663,9 @@ export default function ApplicationsPage() {
                   value={selectedApplication.notes ?? ""}
                   placeholder="Recruiter name, referral, thank-you sent…"
                   onSave={(notes) =>
-                    updateApplication(selectedApplication.id, { notes })
+                    updateApplication(selectedApplication.id, {
+                      notes,
+                    })
                   }
                 />
               </div>
@@ -621,7 +730,9 @@ export default function ApplicationsPage() {
                 <button
                   type="button"
                   className="rounded-xl border border-[var(--hairline)] px-3 py-2 text-sm text-[var(--muted)] transition hover:text-[var(--ink)]"
-                  onClick={() => openApplyUrl(selectedApplication.url)}
+                  onClick={() =>
+                    openApplyUrl(selectedApplication.url)
+                  }
                 >
                   Open apply link
                 </button>
@@ -630,8 +741,13 @@ export default function ApplicationsPage() {
                   type="button"
                   className="rounded-xl border border-red-500/30 px-3 py-2 text-sm text-red-300 transition hover:bg-red-500/10"
                   onClick={() => {
-                    if (confirm("Remove this saved application?")) {
-                      const applicationId = selectedApplication.id;
+                    if (
+                      confirm(
+                        "Remove this saved application?",
+                      )
+                    ) {
+                      const applicationId =
+                        selectedApplication.id;
 
                       setSelectedApplicationId(null);
                       removeApplication(applicationId);

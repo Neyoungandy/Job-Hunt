@@ -65,3 +65,6 @@ Andrew
 
 Hugo
 "Be yourself; everyone else is already taken." Oscar Wilde
+
+Rommel  
+"By the street of 'by-and-by,' one arrives at the house of 'never.'" - Miguel de Cervantes
