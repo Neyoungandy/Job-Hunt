@@ -241,8 +241,8 @@ export default function ApplicationsPage() {
             listing.
           </p>
         ) : (
-          <div className="overflow-x-auto pb-4">
-            <div className="grid min-w-[1320px] grid-cols-6 gap-4">
+          <div className="pb-4">
+            <div className="grid min-w-full grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
               {statuses.map((status) => {
                 const columnApplications = applications.filter(
                   (application) => application.status === status.id,

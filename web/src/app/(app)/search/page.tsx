@@ -163,8 +163,8 @@ export default function SearchPage() {
         </button>
       </header>
 
-      <div className="flex flex-col gap-4 lg:flex-row">
-        <section className="card lg:w-72 lg:shrink-0 space-y-3 p-4">
+      <div className="flex flex-col gap-4 md:flex-row">
+        <section className="card md:w-72 md:shrink-0 space-y-3 p-4">
           <h2 className="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
             Role filters
           </h2>
@@ -236,7 +236,7 @@ export default function SearchPage() {
                           className="h-8 w-8 rounded-md bg-white/10 object-contain"
                         />
                       )}
-                      <h3 className="font-display text-lg font-semibold leading-tight text-[var(--ink)]">
+                      <h3 className="font-display text-lg font-semibold leading-tight text-[var(--ink)] break-words">
                         {job.title}
                       </h3>
                       <MatchScoreBadge match={match} />
@@ -284,8 +284,8 @@ export default function SearchPage() {
           </ul>
 
           {scoredJobs.length > pageSize && (
-            <div className="mt-4 flex items-center justify-between">
-              <div className="flex items-center gap-3">
+            <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex flex-wrap items-center gap-3">
                 <div className="text-sm text-[var(--muted)]">
                   Showing {(scoredJobs.length === 0 ? 0 : (page - 1) * pageSize + 1)}
                   -{Math.min(page * pageSize, scoredJobs.length)} of {scoredJobs.length}

@@ -96,7 +96,7 @@ export function ProfileMenu() {
         Active profile
       </label>
       <select
-        className="rounded-lg border border-[var(--hairline)] bg-[var(--elevated)] px-2 py-2 text-sm text-[var(--ink)] outline-none focus:ring-2 focus:ring-[var(--accent)]"
+        className="w-full rounded-lg border border-[var(--hairline)] bg-[var(--elevated)] px-2 py-2 text-sm text-[var(--ink)] outline-none focus:ring-2 focus:ring-[var(--accent)]"
         value={activeProfile?.id ?? ""}
         disabled={!hydrated}
         onChange={(e) => setActiveProfileId(e.target.value)}
@@ -142,15 +142,15 @@ export function ProfileMenu() {
           Remove current profile
         </button>
       )}
-      <div className="flex flex-wrap gap-2 border-t border-[var(--hairline)] pt-2">
+      <div className="flex w-full flex-wrap gap-2 border-t border-[var(--hairline)] pt-2">
         <button
           type="button"
-          className="rounded-lg border border-[var(--hairline)] px-2 py-1.5 text-xs text-[var(--muted)] hover:text-[var(--ink)]"
+          className="min-w-[8rem] flex-1 rounded-lg border border-[var(--hairline)] px-2 py-1.5 text-xs text-[var(--muted)] hover:text-[var(--ink)]"
           onClick={onExport}
         >
           Export backup
         </button>
-        <label className="cursor-pointer rounded-lg border border-[var(--hairline)] px-2 py-1.5 text-xs text-[var(--muted)] hover:text-[var(--ink)]">
+        <label className="min-w-[8rem] flex-1 cursor-pointer rounded-lg border border-[var(--hairline)] px-2 py-1.5 text-xs text-[var(--muted)] hover:text-[var(--ink)]">
           {busy ? "Importing…" : "Import backup"}
           <input
             type="file"
