@@ -24,7 +24,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <div className="flex flex-1 flex-col lg:flex-row">
         <aside className="glass-panel relative z-10 border-b border-[var(--hairline)] lg:w-[17rem] lg:shrink-0 lg:border-b-0 lg:border-r">
           <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-[rgba(94,234,212,0.06)] to-transparent" />
-          <div className="relative flex items-center justify-between gap-3 border-b border-[var(--hairline)] px-4 py-5 lg:flex-col lg:items-stretch">
+          <div className="relative flex flex-col items-stretch gap-3 border-b border-[var(--hairline)] px-4 py-5 lg:flex-row lg:items-center lg:justify-between">
             <Link href="/dashboard" className="group flex items-center gap-3">
               <BrandMark className="h-10 w-10 shrink-0 transition group-hover:scale-105" />
               <div className="flex flex-col gap-0.5">
@@ -38,7 +38,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </Link>
             <ProfileMenu />
           </div>
-          <nav className="relative flex gap-1 overflow-x-auto px-2 py-3 lg:flex-col lg:overflow-visible lg:px-3">
+          <nav className="relative flex flex-wrap gap-1 overflow-x-auto px-2 py-3 lg:flex-col lg:overflow-visible lg:px-3">
             {nav.map((item) => {
               const active =
                 item.href === "/dashboard"
