@@ -284,13 +284,13 @@ export default function SearchPage() {
           </ul>
 
           {scoredJobs.length > pageSize && (
-            <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex flex-wrap items-center gap-3">
+            <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
                 <div className="text-sm text-[var(--muted)]">
                   Showing {(scoredJobs.length === 0 ? 0 : (page - 1) * pageSize + 1)}
                   -{Math.min(page * pageSize, scoredJobs.length)} of {scoredJobs.length}
                 </div>
-                <label className="flex items-center gap-2 text-sm text-[var(--muted)]">
+                <label className="flex flex-wrap items-center gap-2 text-sm text-[var(--muted)]">
                   <span>Items per page</span>
                   <select
                     className="rounded-xl border border-[var(--hairline)] bg-[var(--elevated)] px-3 py-1 text-sm"
@@ -305,7 +305,7 @@ export default function SearchPage() {
                 </label>
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <button
                   type="button"
                   className="rounded-xl border px-3 py-2 text-sm"
