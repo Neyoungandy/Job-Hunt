@@ -22,12 +22,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="mesh-bg flex min-h-full flex-col text-[var(--ink)]">
       <div className="flex flex-1 flex-col lg:flex-row">
-        <aside className="glass-panel relative z-10 border-b border-[var(--hairline)] lg:w-[17rem] lg:shrink-0 lg:border-b-0 lg:border-r">
+        <aside className="glass-panel relative z-10 flex min-w-0 flex-col border-b border-[var(--hairline)] lg:w-[17rem] lg:shrink-0 lg:overflow-hidden lg:border-b-0 lg:border-r">
           <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-[rgba(94,234,212,0.06)] to-transparent" />
-          <div className="relative flex flex-col items-stretch gap-3 border-b border-[var(--hairline)] px-4 py-5 lg:flex-row lg:items-center lg:justify-between">
-            <Link href="/dashboard" className="group flex items-center gap-3">
+
+          <div className="relative border-b border-[var(--hairline)] px-4 py-5">
+            <Link href="/dashboard" className="group flex min-w-0 items-center gap-3">
               <BrandMark className="h-10 w-10 shrink-0 transition group-hover:scale-105" />
-              <div className="flex flex-col gap-0.5">
+              <div className="min-w-0 flex flex-col gap-0.5">
                 <span className="font-display text-lg font-bold tracking-tight">
                   JOB HUNT
                 </span>
@@ -36,9 +37,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 </span>
               </div>
             </Link>
-            <ProfileMenu />
           </div>
-          <nav className="relative flex flex-wrap gap-1 overflow-x-auto px-2 py-3 lg:flex-col lg:overflow-visible lg:px-3">
+
+          <nav className="relative flex flex-wrap gap-1 overflow-x-auto px-2 py-3 lg:flex-1 lg:flex-col lg:flex-nowrap lg:overflow-x-hidden lg:overflow-y-auto lg:px-3">
             {nav.map((item) => {
               const active =
                 item.href === "/dashboard"
@@ -48,7 +49,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`flex items-center gap-2.5 whitespace-nowrap rounded-xl px-3 py-2.5 text-sm font-medium transition-all ${
+                  className={`flex min-w-0 items-center gap-2.5 whitespace-nowrap rounded-xl px-3 py-2.5 text-sm font-medium transition-all ${
                     active
                       ? "bg-[var(--accent-soft)] text-[var(--ink)] shadow-[inset_3px_0_0_0_var(--accent)]"
                       : "text-[var(--muted)] hover:bg-white/[0.04] hover:text-[var(--ink)]"
@@ -72,6 +73,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               );
             })}
           </nav>
+
+          <div className="relative min-w-0 shrink-0 border-t border-[var(--hairline)] px-3 py-3">
+            <ProfileMenu />
+          </div>
+
           <div className="relative hidden px-4 pb-5 pt-1 lg:block">
             <div className="rounded-xl border border-[var(--hairline)] bg-white/[0.03] p-3 text-xs leading-relaxed text-[var(--muted)]">
               <p className="font-medium text-[var(--ink)]/90">You stay in control</p>
@@ -89,7 +95,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               Human-in-the-loop — you submit on the employer site
             </p>
           </header>
-          <main className="flex-1 px-4 py-6 sm:px-8 sm:py-10">{children}</main>
+          <main className="min-w-0 flex-1 px-4 py-6 sm:px-8 sm:py-10">{children}</main>
         </div>
       </div>
     </div>
