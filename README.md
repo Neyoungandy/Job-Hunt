@@ -4,6 +4,8 @@ A web-based job search workspace that centralizes discovery, document tailoring,
 
 **CSE 499 capstone project** — Brigham Young University Idaho (BYU-I)
 
+**Live app:** [https://job-hunt-nine-flax.vercel.app/](https://job-hunt-nine-flax.vercel.app/)
+
 The Next.js application lives in the [`web/`](web/) directory.
 
 ## Team
@@ -25,12 +27,12 @@ The Next.js application lives in the [`web/`](web/) directory.
 
 ## Tech stack
 
-| Layer        | Technologies                                                                |
-| ------------ | --------------------------------------------------------------------------- |
-| Frontend     | Next.js 16, React 19, TypeScript, Tailwind CSS 4, SWR                       |
-| Backend      | Next.js API Routes, NextAuth.js (Auth.js v5), Prisma                        |
-| Database     | MongoDB Atlas                                                               |
-| Integrations | Job APIs/RSS, Greenhouse & Lever ATS, OpenAI (optional), pdf-parse, mammoth |
+| Layer        | Technologies                                                                 |
+| ------------ | ---------------------------------------------------------------------------- |
+| Frontend     | Next.js 16, React 19, TypeScript, Tailwind CSS 4, SWR                        |
+| Backend      | Next.js API Routes, Firebase Admin SDK                                       |
+| Database     | Firebase (Authentication + Firestore)                                        |
+| Integrations | Job APIs/RSS, Greenhouse & Lever ATS, OpenAI (optional), pdf-parse, mammoth  |
 
 ## Getting started
 
@@ -39,26 +41,17 @@ From the `web` directory:
 ```bash
 cd web
 npm install
-npx prisma db push
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000).
+Open [http://localhost:3000](http://localhost:3000) locally, or use the [live deployment](https://job-hunt-nine-flax.vercel.app/).
 
 ### Environment variables
 
 Copy `.env.example` to `.env` inside `web/` and fill in your values:
 
-- `DATABASE_URL` — MongoDB connection string
-- `AUTH_SECRET` — random secret for session encryption
-- `AUTH_URL` — app URL (e.g. `http://localhost:3000`)
-
-Optional: `AUTH_GOOGLE_ID` / `AUTH_GOOGLE_SECRET`, `AUTH_GITHUB_ID` / `AUTH_GITHUB_SECRET`, `OPENAI_API_KEY`.
 
 ## Favorite Quotes
-
-Victor  
-"Success is where preparation and opportunity meet."
 
 Andrew  
 "The Lord loves efforts because effort brings rewards."
