@@ -97,8 +97,9 @@ export default async function DashboardPage() {
             )}
           </h1>
           <p className="max-w-2xl text-base leading-relaxed text-[var(--muted)]">
-            Pull listings from Remotive, Arbeitnow, Remote OK, We Work Remotely,
-            Jobicy, Greenhouse, and Lever. Tailor documents per job, then track
+            Pull worldwide-eligible remote listings from Remotive, Arbeitnow, Remote OK, Himalayas,
+            4 Day Week, Jobicy, Greenhouse, and Lever. Country-only boards and paid job-board
+            subscriptions are skipped. Tailor documents per job, then track
             everything in your pipeline.
           </p>
         </div>
