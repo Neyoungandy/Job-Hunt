@@ -16,7 +16,7 @@ The Next.js application lives in the [`web/`](web/) directory.
 
 ## Features
 
-- **Multi-source job search** — Listings from public APIs and ATS boards (Remotive, Arbeitnow, Remote OK, Greenhouse, Lever, and more)
+- **Multi-source job search** — Worldwide-eligible remote listings from public APIs and ATS boards (Remotive, Arbeitnow, Remote OK, Himalayas, 4 Day Week, Jobicy, Greenhouse, Lever). Country-only and paid job-board listings are skipped.
 - **Role-based filtering** — Match scoring against resume content and role interests
 - **Resume management** — Import PDF/Word or paste text; one base resume per profile
 - **Smart tailoring** — Job-specific resume and cover letter drafts (heuristic + optional OpenAI)

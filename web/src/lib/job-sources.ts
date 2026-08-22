@@ -1,5 +1,6 @@
 import type { RemoteJobListing } from "@/lib/types";
-import { fetchJobicyRemoteJobs, fetchWwrRemoteJobs } from "@/lib/job-sources-rss";
+import { isOpenWorldwideLocation } from "@/lib/job-location";
+import { fetchJobicyRemoteJobs } from "@/lib/job-sources-jobicy";
 import { fetchAtsRemoteJobs } from "@/lib/job-sources-ats";
 
 type RemotiveApi = { jobs?: Record<string, unknown>[] };
@@ -43,7 +44,11 @@ function isRemoteOkRemote(row: RemoteOkRow): boolean {
   return loc.includes("remote") || loc.includes("worldwide") || loc.includes("anywhere");
 }
 
-function normalizeRemotive(j: Record<string, unknown>): RemoteJobListing {
+function normalizeRemotive(j: Record<string, unknown>): RemoteJobListing | null {
+  const loc = j.candidate_required_location
+    ? String(j.candidate_required_location)
+    : "";
+  if (!isOpenWorldwideLocation(loc)) return null;
   const id = String(j.id ?? "");
   return {
     id: `remotive:${id}`,
@@ -65,6 +70,7 @@ function normalizeRemotive(j: Record<string, unknown>): RemoteJobListing {
 
 function normalizeArbeitnow(j: ArbeitRow): RemoteJobListing | null {
   if (!j.remote) return null;
+  if (!isOpenWorldwideLocation(j.location)) return null;
   const when = j.created_at
     ? new Date(j.created_at * 1000).toISOString()
     : new Date().toISOString();
@@ -84,6 +90,7 @@ function normalizeArbeitnow(j: ArbeitRow): RemoteJobListing | null {
 function normalizeRemoteOk(j: RemoteOkRow): RemoteJobListing | null {
   if (!j.company || !j.position) return null;
   if (!isRemoteOkRemote(j)) return null;
+  if (!isOpenWorldwideLocation(j.location)) return null;
   const salary =
     j.salary_min != null && j.salary_max != null
       ? `$${j.salary_min}–${j.salary_max}`
@@ -105,8 +112,156 @@ function normalizeRemoteOk(j: RemoteOkRow): RemoteJobListing | null {
   };
 }
 
+type HimalayasJob = {
+  title?: string;
+  excerpt?: string;
+  companyName?: string;
+  companyLogo?: string;
+  employmentType?: string;
+  minSalary?: number | null;
+  maxSalary?: number | null;
+  currency?: string | null;
+  locationRestrictions?: string[];
+  categories?: string[];
+  description?: string;
+  pubDate?: number;
+  applicationLink?: string;
+  guid?: string;
+};
+
+type HimalayasApi = {
+  jobs?: HimalayasJob[];
+  nextCursor?: string;
+};
+
+type FourDayWeekLocation = {
+  city?: string;
+  country?: string;
+  continent?: string;
+  work_arrangement?: string;
+};
+
+type FourDayWeekJob = {
+  id?: string;
+  title?: string;
+  slug?: string;
+  company_name?: string;
+  work_arrangement?: string;
+  locations?: FourDayWeekLocation[];
+  posted?: number;
+  salary?: string;
+  category?: string;
+  is_expired?: boolean;
+  company?: { logo_url?: string; hires_worldwide?: boolean };
+  stack?: { name?: string }[];
+};
+
+function unixToIso(value: number | undefined): string {
+  if (!value || !Number.isFinite(value)) return new Date().toISOString();
+  const ms = value > 1e12 ? value : value * 1000;
+  return new Date(ms).toISOString();
+}
+
+function normalizeHimalayas(j: HimalayasJob): RemoteJobListing | null {
+  const url = String(j.applicationLink || j.guid || "").trim();
+  const title = String(j.title ?? "").trim();
+  if (!url || !title) return null;
+  if (!isOpenWorldwideLocation(j.locationRestrictions)) return null;
+  const salary =
+    j.minSalary != null && j.maxSalary != null && j.currency
+      ? `${j.currency} ${j.minSalary.toLocaleString()}–${j.maxSalary.toLocaleString()}`
+      : undefined;
+  return {
+    id: `himalayas:${url}`,
+    source: "Himalayas",
+    title,
+    company_name: String(j.companyName ?? "—"),
+    company_logo: j.companyLogo ? String(j.companyLogo) : undefined,
+    category: (j.categories ?? []).slice(0, 6).join(", ") || "Remote",
+    job_type: String(j.employmentType ?? "Remote"),
+    publication_date: unixToIso(j.pubDate),
+    candidate_required_location: (j.locationRestrictions ?? []).join(", ") || undefined,
+    salary,
+    url,
+    description: String(j.description || j.excerpt || ""),
+  };
+}
+
+function normalizeFourDayWeek(j: FourDayWeekJob): RemoteJobListing | null {
+  if (j.is_expired) return null;
+  const arrangement = (j.work_arrangement ?? "").toLowerCase();
+  if (arrangement !== "remote") return null;
+  if (!j.company?.hires_worldwide) {
+    const locText = (j.locations ?? [])
+      .map((loc) => [loc.city, loc.country, loc.continent].filter(Boolean).join(", "))
+      .join(" · ");
+    if (!isOpenWorldwideLocation(locText || undefined)) return null;
+  }
+  const slug = String(j.slug ?? "").trim();
+  const title = String(j.title ?? "").trim();
+  if (!slug || !title) return null;
+  const locParts = (j.locations ?? [])
+    .map((loc) => [loc.city, loc.country, loc.continent].filter(Boolean).join(", "))
+    .filter(Boolean);
+  const stack = (j.stack ?? []).map((s) => s.name).filter(Boolean).join(", ");
+  return {
+    id: `4dayweek:${j.id ?? slug}`,
+    source: "4 Day Week",
+    title,
+    company_name: String(j.company_name ?? "—"),
+    company_logo: j.company?.logo_url,
+    category: j.category || "Remote",
+    job_type: "Remote",
+    publication_date: unixToIso(j.posted),
+    candidate_required_location: locParts[0] || undefined,
+    salary: j.salary || undefined,
+    url: `https://4dayweek.io/jobs/${slug}`,
+    description: [stack && `Stack: ${stack}`, j.category && `Category: ${j.category}`]
+      .filter(Boolean)
+      .join(". "),
+  };
+}
+
+async function fetchHimalayasRemoteJobs(): Promise<RemoteJobListing[]> {
+  const out: RemoteJobListing[] = [];
+  let cursor: string | undefined;
+  for (let page = 0; page < 2; page += 1) {
+    const params = new URLSearchParams({ limit: "100" });
+    if (cursor) params.set("cursor", cursor);
+    const res = await fetch(`https://himalayas.app/jobs/api?${params.toString()}`, {
+      next: { revalidate: 300 },
+      headers: { Accept: "application/json" },
+    });
+    if (!res.ok) break;
+    const data = (await res.json()) as HimalayasApi;
+    for (const job of data.jobs ?? []) {
+      const normalized = normalizeHimalayas(job);
+      if (normalized) out.push(normalized);
+    }
+    cursor = data.nextCursor;
+    if (!cursor) break;
+  }
+  return out;
+}
+
+async function fetchFourDayWeekRemoteJobs(): Promise<RemoteJobListing[]> {
+  const res = await fetch("https://4dayweek.io/api/jobs", {
+    next: { revalidate: 300 },
+    headers: { Accept: "application/json" },
+  });
+  if (!res.ok) return [];
+  const data = (await res.json()) as { jobs?: FourDayWeekJob[] };
+  const out: RemoteJobListing[] = [];
+  for (const job of data.jobs ?? []) {
+    const normalized = normalizeFourDayWeek(job);
+    if (normalized) out.push(normalized);
+  }
+  return out;
+}
+
 export async function fetchAggregatedRemoteJobs(): Promise<RemoteJobListing[]> {
-  const [remRes, arbRes, rokRes, wwrRes, jobicyRes, atsRes] = await Promise.allSettled([
+  const [remRes, arbRes, rokRes, himalayasRes, fourDayRes, jobicyRes, atsRes] =
+    await Promise.allSettled([
     fetch("https://remotive.com/api/remote-jobs", {
       next: { revalidate: 300 },
       headers: { Accept: "application/json" },
@@ -119,7 +274,8 @@ export async function fetchAggregatedRemoteJobs(): Promise<RemoteJobListing[]> {
       next: { revalidate: 300 },
       headers: { Accept: "application/json" },
     }),
-    fetchWwrRemoteJobs(),
+    fetchHimalayasRemoteJobs(),
+    fetchFourDayWeekRemoteJobs(),
     fetchJobicyRemoteJobs(),
     fetchAtsRemoteJobs(),
   ]);
@@ -170,8 +326,14 @@ export async function fetchAggregatedRemoteJobs(): Promise<RemoteJobListing[]> {
     }
   }
 
-  if (wwrRes.status === "fulfilled") {
-    for (const j of wwrRes.value) {
+  if (himalayasRes.status === "fulfilled") {
+    for (const j of himalayasRes.value) {
+      push(j);
+    }
+  }
+
+  if (fourDayRes.status === "fulfilled") {
+    for (const j of fourDayRes.value) {
       push(j);
     }
   }

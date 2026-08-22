@@ -1,5 +1,6 @@
 import type { RemoteJobListing } from "@/lib/types";
 import { greenhouseBoardTokens, leverSiteSlugs } from "@/lib/ats-board-config";
+import { isOpenWorldwideLocation } from "@/lib/job-location";
 
 type GreenhouseJob = {
   id: number;
@@ -35,6 +36,7 @@ function normalizeGreenhouse(
   const title = (j.title ?? "").trim();
   const url = (j.absolute_url ?? "").trim();
   if (!title || !url) return null;
+  if (!isOpenWorldwideLocation(j.location?.name)) return null;
   const desc =
     typeof j.content === "string" && j.content.trim()
       ? j.content
@@ -122,6 +124,7 @@ function normalizeLever(
   if (!title || !url) return null;
   const cats = (p.categories as Record<string, unknown>) || {};
   const loc = leverLocation(cats);
+  if (!isOpenWorldwideLocation(loc)) return null;
   const desc =
     String(
       p.descriptionPlain ??

@@ -5,7 +5,7 @@ import { JobSearchHero } from "@/components/illustrations/JobSearchHero";
 const features = [
   {
     title: "Multi-source search",
-    body: "Remotive, Arbeitnow, Remote OK, We Work Remotely, Jobicy, Greenhouse, and Lever — in one feed.",
+    body: "Worldwide-eligible remote roles from Remotive, Arbeitnow, Remote OK, Himalayas, 4 Day Week, Jobicy, Greenhouse, and Lever — no paid job-board subscriptions.",
     accent: "from-teal-500/20 to-cyan-500/5",
     icon: "◎",
   },
