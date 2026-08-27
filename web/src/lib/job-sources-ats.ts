@@ -1,6 +1,6 @@
 import type { RemoteJobListing } from "@/lib/types";
-import { greenhouseBoardTokens, leverSiteSlugs } from "@/lib/ats-board-config";
-import { isOpenWorldwideLocation } from "@/lib/job-location";
+import { greenhouseBoardTokens, leverSiteSlugs, ashbyBoardSlugs } from "@/lib/ats-board-config";
+import { isBlockedListing, isOpenWorldwideLocation } from "@/lib/job-location";
 
 type GreenhouseJob = {
   id: number;
@@ -13,12 +13,24 @@ type GreenhouseJob = {
 };
 
 function displaySlugName(slug: string): string {
-  if (slug === "leverdemo") return "Lever (demo)";
   return slug
     .split(/[-_]/)
     .filter(Boolean)
     .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
     .join(" ");
+}
+
+function isLeverDemoListing(site: string, url: string, title: string, desc: string): boolean {
+  const blob = `${site} ${url} ${title} ${desc}`.toLowerCase();
+  return (
+    site === "leverdemo" ||
+    site.includes("demo") ||
+    url.includes("/leverdemo/") ||
+    blob.includes("demo job listing") ||
+    blob.includes("fictional job") ||
+    blob.includes("not an actual open position") ||
+    blob.includes("for demonstration purposes")
+  );
 }
 
 function chunk<T>(arr: T[], size: number): T[][] {
@@ -133,6 +145,7 @@ function normalizeLever(
         "",
     ).trim() ||
     "Full description is on the employer’s Lever job page (link below).";
+  if (isLeverDemoListing(site, url, title, desc)) return null;
   const team =
     (typeof cats.team === "string" && cats.team) ||
     (typeof cats.department === "string" && cats.department) ||
@@ -185,14 +198,86 @@ export async function fetchAllLeverJobs(): Promise<RemoteJobListing[]> {
     const batches = await Promise.all(group.map((s) => fetchLeverSite(s)));
     for (const b of batches) out.push(...b);
   }
+  return out.filter((job) => !isBlockedListing(job));
+}
+
+type AshbyJob = {
+  id?: string;
+  title?: string;
+  departmentName?: string;
+  teamName?: string;
+  employmentType?: string;
+  locationName?: string;
+  locationIsRemote?: boolean;
+  isRemote?: boolean;
+  jobUrl?: string;
+  applyUrl?: string;
+  publishedAt?: string;
+  descriptionPlain?: string;
+  descriptionHtml?: string;
+  isListed?: boolean;
+};
+
+function normalizeAshby(board: string, j: AshbyJob): RemoteJobListing | null {
+  if (j.isListed === false) return null;
+  const remote = j.locationIsRemote === true || j.isRemote === true;
+  const loc = j.locationName ?? "";
+  if (!remote && loc && !/remote|anywhere|worldwide|global/i.test(loc)) {
+    return null;
+  }
+  if (!isOpenWorldwideLocation(loc || (remote ? "Remote" : ""))) return null;
+  const title = String(j.title ?? "").trim();
+  const url = String(j.applyUrl || j.jobUrl || "").trim();
+  if (!title || !url) return null;
+  if (isBlockedListing({ url, title, company_name: board })) return null;
+  return {
+    id: `ashby:${board}:${j.id ?? url}`,
+    source: "Ashby",
+    title,
+    company_name: displaySlugName(board),
+    category: j.departmentName || j.teamName || "Employer board (Ashby)",
+    job_type: j.employmentType || "Remote",
+    publication_date: j.publishedAt || new Date().toISOString(),
+    candidate_required_location: loc || "Remote",
+    url,
+    description: String(j.descriptionPlain || j.descriptionHtml || ""),
+  };
+}
+
+async function fetchAshbyBoard(board: string): Promise<RemoteJobListing[]> {
+  const url = `https://api.ashbyhq.com/posting-api/job-board/${encodeURIComponent(board)}`;
+  try {
+    const res = await fetch(url, {
+      next: { revalidate: 900 },
+      headers: { Accept: "application/json" },
+    });
+    if (!res.ok) return [];
+    const data = (await res.json()) as { jobs?: AshbyJob[] };
+    if (!Array.isArray(data.jobs)) return [];
+    return data.jobs
+      .map((j) => normalizeAshby(board, j))
+      .filter((x): x is RemoteJobListing => Boolean(x));
+  } catch {
+    return [];
+  }
+}
+
+export async function fetchAllAshbyJobs(): Promise<RemoteJobListing[]> {
+  const boards = ashbyBoardSlugs();
+  const out: RemoteJobListing[] = [];
+  for (const group of chunk(boards, 5)) {
+    const batches = await Promise.all(group.map((b) => fetchAshbyBoard(b)));
+    for (const b of batches) out.push(...b);
+  }
   return out;
 }
 
-/** Greenhouse + Lever employer boards (parallel). */
+/** Greenhouse + Lever + Ashby employer boards (parallel). */
 export async function fetchAtsRemoteJobs(): Promise<RemoteJobListing[]> {
-  const [gh, lv] = await Promise.all([
+  const [gh, lv, ashby] = await Promise.all([
     fetchAllGreenhouseJobs(),
     fetchAllLeverJobs(),
+    fetchAllAshbyJobs(),
   ]);
-  return [...gh, ...lv];
+  return [...gh, ...lv, ...ashby];
 }

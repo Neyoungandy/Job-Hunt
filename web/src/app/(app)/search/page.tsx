@@ -149,7 +149,7 @@ export default function SearchPage() {
             Job search
           </h1>
           <p className="mt-1 text-sm text-[var(--muted)]">
-            Worldwide-eligible remote roles from Remotive, Arbeitnow, Remote OK, Himalayas, 4 Day Week, Jobicy, Greenhouse, and Lever — deduped by apply URL. Country-only listings are skipped. Filter with
+            Worldwide-eligible remote roles from Remotive, Arbeitnow, Remote OK, Himalayas, 4 Day Week, Jobicy, Greenhouse, Lever, and Ashby — deduped by apply URL. Country-only listings are skipped. Filter with
             your profile&apos;s role interests and keywords.
           </p>
         </div>
