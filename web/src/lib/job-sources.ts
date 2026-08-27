@@ -1,5 +1,5 @@
 import type { RemoteJobListing } from "@/lib/types";
-import { isOpenWorldwideLocation } from "@/lib/job-location";
+import { isBlockedListing, isOpenWorldwideLocation } from "@/lib/job-location";
 import { fetchJobicyRemoteJobs } from "@/lib/job-sources-jobicy";
 import { fetchAtsRemoteJobs } from "@/lib/job-sources-ats";
 
@@ -285,6 +285,7 @@ export async function fetchAggregatedRemoteJobs(): Promise<RemoteJobListing[]> {
 
   function push(job: RemoteJobListing | null) {
     if (!job || !job.url) return;
+    if (isBlockedListing(job)) return;
     const key = job.url.trim().toLowerCase();
     if (seen.has(key)) return;
     seen.add(key);

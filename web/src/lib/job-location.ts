@@ -49,3 +49,43 @@ function textLooksWorldwide(raw: string): boolean {
 
   return false;
 }
+
+/** Drop fictional ATS demos and known paywalled boards (e.g. We Work Remotely). */
+export function isBlockedListing(job: {
+  id?: string;
+  source?: string;
+  company_name?: string;
+  url?: string;
+  title?: string;
+  description?: string;
+}): boolean {
+  const blob = [
+    job.id,
+    job.source,
+    job.company_name,
+    job.url,
+    job.title,
+    job.description,
+  ]
+    .map((v) => String(v ?? "").toLowerCase())
+    .join(" ");
+
+  if (
+    blob.includes("leverdemo") ||
+    blob.includes("lever (demo)") ||
+    blob.includes("lever demo") ||
+    blob.includes("/leverdemo/") ||
+    blob.includes("demo job listing") ||
+    blob.includes("fictional job") ||
+    blob.includes("not an actual open position") ||
+    blob.includes("for demonstration purposes")
+  ) {
+    return true;
+  }
+
+  if (blob.includes("weworkremotely") || blob.includes("we work remotely")) {
+    return true;
+  }
+
+  return false;
+}
